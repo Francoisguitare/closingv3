@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord - GIA Closing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style type="text/tailwindcss">
+        @layer base {
+            body { font-family: 'Inter', sans-serif; }
+        }
+        @layer components {
+            /* Badges de Statut */
+            .status-scheduled { background-color: #fbbf24; color: #78350f; } /* R1 Planifié */
+            .status-waiting { background-color: #60a5fa; color: #1e3a8a; } /* "En Attente" */
+            .status-noshow-r1 { background-color: #f87171; color: #7f1d1d; }
+            .status-noshow-r2 { background-color: #fb923c; color: #7c2d12; }
+            .status-r1 { background-color: #2563eb; color: #dbeafe; }
+            .status-r2 { background-color: #9333ea; color: #f3e8ff; }
+            .status-closed { background-color: #16a34a; color: #dcfce7; }
+            .status-lost { background-color: #dc2626; color: #fee2e2; }
+            .status-other { background-color: #4b5563; color: #f3f4f6; }
+            
+            .installments-fields.hidden, .modal.hidden { display: none; }
+            input[type="date"]:invalid { border-color: #f87171; }
+            
+            /* KPI Secondaire (pour Nombres) */
+            .kpi-secondary-value { 
+                font-size: 1rem; /* text-base */
+                font-weight: 600; /* font-semibold */
+                color: #9ca3af; /* gray-400 */
+                margin-left: 0.5rem; /* ml-2 */
+            }
+            .kpi-secondary-value.text-red-400 { color: #f87171; }
+            .kpi-secondary-value.text-orange-400 { color: #fb923c; }
+            
+            .date-shortcut, .view-toggle { @apply text-sm font-medium text-gray-400 hover:text-white px-3 py-1 rounded-md transition-colors; }
+            .date-shortcut.active, .view-toggle.active { @apply bg-blue-600 text-white; }
+            .date-shortcut:disabled, .view-toggle:disabled { @apply opacity-40 cursor-not-allowed; }
+            
+            th { @apply px-4 py-3 bg-slate-700 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
+            td { @apply px-4 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700; }
+            tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+            tr:last-child td { @apply border-b-0; }
+            
+            /* KPI Cliquable (pour Graphique ET Filtre) */
+            .kpi-card-toggle { @apply cursor-pointer transition-all duration-200; }
+            .kpi-chart-active { @apply ring-2 ring-offset-2 ring-offset-slate-900 ring-white/70; }
+            .kpi-card-toggle:not(.kpi-chart-active) { @apply opacity-60 hover:opacity-100; }
+            .kpi-card-static { @apply bg-slate-800/80 backdrop-blur-sm border border-slate-700 p-4 rounded-xl shadow-xl text-center transition-all duration-300 relative overflow-hidden border-t-4; }
+        
+            /* Case à cocher customisée */
+            .custom-checkbox {
+                @apply w-5 h-5 rounded border-2 border-slate-500 bg-slate-700 text-teal-500 shadow-sm focus:ring-teal-400 focus:ring-offset-slate-800;
+            }
+            .custom-checkbox:disabled {
+                @apply opacity-50 cursor-not-allowed;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-gray-900 to-slate-900 text-white min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-4"> <h1 class="text-3xl font-bold text-teal-300 mb-4 md:mb-0">Tableau de Bord GIA</h1> <a href="index.html" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-5 rounded-lg transition-all duration-300 shadow-lg shadow-teal-800/40"> + Planifier R1 </a> </header>
+        
+        <!-- Référentiel J-180 -->
+        <section id="sliding-kpis-180" class="bg-slate-800/30 p-3 rounded-xl border border-slate-700/50">
+             <h3 class="text-sm font-semibold text-gray-400 mb-2 text-center">Référentiel (180 derniers jours)</h3>
+             <div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-gray-300">
+                 <span>R1 Planifiés: <strong id="kpi-180-planned" class="text-white">...</strong></span>
+                 <span>R1 Effectués: <strong id="kpi-180-completed" class="text-white">...</strong></span>
+                 <span>No Show R1: <strong id="kpi-180-noshow-r1" class="text-red-400">...</strong></span>
+                 <span>Closings: <strong id="kpi-180-closed" class="text-green-400">...</strong></span>
+                 <span>Conv. (Effec→Closé): <strong id="kpi-180-conv-rate" class="text-teal-300">...</strong></span>
+                 <span>Cash Période: <strong id="kpi-180-cash" class="text-teal-300">...</strong></span>
+             </div>
+        </section>
+
+        <!-- Filtres -->
+        <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-4">
+            <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+                <h2 class="text-lg font-semibold text-gray-300 mr-4 whitespace-nowrap">Période :</h2>
+                <div class="flex-grow flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto"><label for="startDate" class="text-sm font-medium text-gray-400">Du</label><input type="date" id="startDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 w-full sm:w-auto"></div>
+                <div class="flex-grow flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto"><label for="endDate" class="text-sm font-medium text-gray-400">Au</label><input type="date" id="endDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 w-full sm:w-auto"></div>
+                <button id="filterButton" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed">Appliquer</button>
+            </div>
+            <div id="dateShortcuts" class="flex flex-wrap items-center gap-x-3 gap-y-2 pt-3 border-t border-slate-700">
+                <span class="text-sm text-gray-400">Raccourcis:</span>
+                <button data-days="0" class="date-shortcut">Aujourd'hui</button>
+                <button data-days="7" class="date-shortcut">7 Jours</button>
+                <button data-days="14" class="date-shortcut">14 Jours</button>
+                <button data-days="30" class="date-shortcut">30 Jours</button>
+                <button data-days="90" class="date-shortcut">90 Jours</button>
+                <button data-days="month" class="date-shortcut active">Ce mois-ci</button>
+            </div>
+            <div id="viewToggles" class="flex flex-wrap items-center gap-x-3 gap-y-2 pt-3 border-t border-slate-700">
+                 <span class="text-sm text-gray-400">Vues:</span>
+                 <button id="viewTogglePeriod" class="view-toggle active">Vue Période</button>
+                 <button id="viewToggleWaiting" class="view-toggle">Afficher "En Attente" (Total)</button>
+            </div>
+        </section>
+
+        <!-- KPIs (Ordre corrigé + Format % modifié) -->
+        <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+             <!-- Ligne 1: Tunnel R1 -->
+             <div id="kpi-card-r1-planned" class="kpi-card-toggle kpi-card-static border-t-amber-500"><span id="kpiR1Planned" class="text-4xl font-bold text-amber-300 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">R1 Planifiés</span></div>
+             <div id="kpi-card-r1-noshow" class="kpi-card-toggle kpi-card-static border-t-red-500"><div class="flex items-center justify-center"><span id="kpiR1NoShowRate" class="text-4xl font-bold text-red-400 block">0%</span><span id="kpiR1NoShowCount" class="kpi-secondary-value text-red-400 block">(0)</span></div><span class="text-sm text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R1</span></div>
+             <div id="kpi-card-r1-completed" class="kpi-card-toggle kpi-card-static border-t-blue-500"><span id="kpiR1Completed" class="text-4xl font-bold text-blue-300 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">R1 Effectués</span></div>
+             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR1toR2Rate" class="text-4xl font-bold text-teal-300 block">0%</span><span id="kpiR1toR2Count" class="kpi-secondary-value block">(0)</span></div><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Eff → R2</span></div>
+             
+             <!-- Ligne 2: Tunnel R2 -->
+             <div id="kpi-card-r2-count" class="kpi-card-toggle kpi-card-static border-t-purple-500"><span id="kpiR2Count" class="text-4xl font-bold text-purple-300 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">R2 Planifiés</span></div>
+             <div id="kpi-card-r2-noshow" class="kpi-card-toggle kpi-card-static border-t-orange-500"><div class="flex items-center justify-center"><span id="kpiR2NoShowRate" class="text-4xl font-bold text-orange-400 block">0%</span><span id="kpiR2NoShowCount" class="kpi-secondary-value !text-orange-400 block">(0)</span></div><span class="text-sm text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R2</span></div>
+             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR2toClosedRate" class="text-4xl font-bold text-teal-300 block">0%</span><span id="kpiR2toClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Conv. R2 Eff → Closé</span></div>
+             <div id="kpi-card-closing" class="kpi-card-toggle kpi-card-static border-t-green-500"><span id="kpiClosingCount" class="text-4xl font-bold text-green-300 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Closings</span></div>
+             
+             <!-- Ligne 3: Cash & Statut Annexe -->
+             <div id="kpi-card-cash" class="kpi-card-toggle kpi-card-static border-t-teal-500"><span id="kpiCashCollected" class="text-4xl font-bold text-teal-300 block mb-1">0€</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Cash Période</span></div>
+             <div id="kpi-card-cash-future" class="kpi-card-static border-t-teal-500"><span id="kpiCashFutureRecurring" class="text-4xl font-bold text-teal-300 block mb-1">0€</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Cash Récurrent Futur</span></div>
+             <div id="kpi-card-waiting" class="kpi-card-static border-t-blue-400"><span id="kpiWaitingCount" class="text-4xl font-bold text-blue-400 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Total "En Attente"</span></div>
+        </section>
+
+        <!-- Graphique -->
+        <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+             <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-300">Progression</h2>
+                <div class="flex space-x-2 text-sm text-gray-400">
+                    Cliquez sur les KPIs ci-dessus pour afficher/masquer les courbes.
+                </div>
+             </div>
+             <div id="chartContainer" class="h-64 flex items-center justify-center text-gray-500">
+                 <canvas id="mainChart"></canvas>
+                 <span id="chartPlaceholder" class="hidden">Graphique à venir...</span>
+            </div>
+        </section>
+
+        <!-- Table Détails -->
+        <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 max-h-[60vh] overflow-auto">
+             <h2 class="text-xl font-semibold text-gray-300 mb-4 sticky top-0 bg-slate-800/90 py-2 z-20 backdrop-blur-sm">Détails des Prospects</h2>
+             <div class="min-w-[1200px]">
+                 <table class="w-full divide-y divide-slate-700 table-fixed">
+                    <thead class="sticky top-[4.5rem] z-10">
+                        <tr>
+                            <th class="w-[10%]">Date R1</th>
+                            <th class="w-[15%]">Prospect</th>
+                            <th class="w-[10%]">Statut Qualif.</th>
+                            <th class="w-[5%] text-center">Score</th>
+                            <th class="w-[10%]">Statut</th>
+                            <th class="w-[10%]">Date R2</th>
+                            <th class="w-[10%]">Date Relance</th>
+                            <th class="w-[10%] text-right">Montant Total</th>
+                            <th class="w-[18%] text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailsTableBody" class="bg-slate-800 divide-y divide-slate-700"></tbody>
+                </table>
+             </div>
+        </section>
+    </div>
+
+    <!-- Modal Édition (Avec Checkboxes) -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"> 
+        <div class="bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-lg border border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar"> 
+            <h2 class="text-xl font-semibold text-teal-300">Modifier Prospect: <span id="modalProspectName"></span></h2> 
+            <input type="hidden" id="modalDocId"> 
+            
+            <!-- Checkboxes de Progression -->
+            <fieldset class="border border-slate-600 p-4 rounded-lg"> 
+                <legend class="text-sm font-medium text-gray-400 px-1">Progression du Tunnel</legend> 
+                <div class="space-y-4 pt-2">
+                    <!-- R1 Checkbox -->
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="modalIsR1Completed" type="checkbox" class="custom-checkbox">
+                        </div>
+                        <div class="ml-3 text-sm flex-grow">
+                            <label for="modalIsR1Completed" class="font-medium text-white">R1 Effectué</label>
+                            <div id="modalR1Fields" class="grid grid-cols-2 gap-4 mt-2">
+                                <div><label for="modalProspectDate" class="block text-xs font-medium text-gray-300 mb-1">Date R1</label><input type="date" id="modalProspectDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div>
+                                <div><label for="modalProspectTime" class="block text-sm font-medium text-gray-300 mb-1">Heure R1</label><input type="time" id="modalProspectTime" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- R2 Checkbox -->
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="modalIsR2Completed" type="checkbox" class="custom-checkbox">
+                        </div>
+                        <div class="ml-3 text-sm flex-grow">
+                            <label for="modalIsR2Completed" class="font-medium text-white">R2 Planifié/Effectué</label>
+                            <div id="modalR2Fields" class="grid grid-cols-2 gap-4 mt-2 hidden">
+                                <div><label for="modalProspectDateR2" class="block text-xs font-medium text-gray-300 mb-1">Date R2</label><input type="date" id="modalProspectDateR2" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div>
+                                <div><label for="modalProspectTimeR2" class="block text-sm font-medium text-gray-300 mb-1">Heure R2</label><input type="time" id="modalProspectTimeR2" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div>
+                            </div>
+                        </div>
+                    </div>
+                     <!-- Closé Checkbox -->
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="modalIsClosed" type="checkbox" class="custom-checkbox">
+                        </div>
+                        <div class="ml-3 text-sm flex-grow">
+                            <label for="modalIsClosed" class="font-medium text-white">Closé</label>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="border border-slate-600 p-3 rounded-lg"> 
+                <legend class="text-sm font-medium text-gray-400 px-1">Statut & Suivi</legend> 
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"> 
+                    <div><label for="modalStatus" class="block text-sm font-medium text-gray-300 mb-1">Statut Actuel</label><select id="modalStatus" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="R1 Scheduled">R1 Planifié</option><option value="R1 Completed">R1 Effectué</option><option value="No Show R1">No Show R1</option> <option value="R2 Scheduled">R2 Planifié</option><option value="No Show R2">No Show R2</option><option value="Waiting">En Attente</option> <option value="Closed">Closé</option> <option value="Lost">Perdu</option> <option value="Other">Autre</option></select></div> 
+                    <div id="modalLostReasonContainer" class="hidden sm:col-span-1 space-y-1"><label for="modalLostReason" class="block text-sm font-medium text-gray-300">Raison si Perdu/NoShow</label><input type="text" id="modalLostReason" placeholder="Ex: Prix, Timing..." class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"></div> 
+                    <div id="modalRelaunchDateContainer" class="hidden sm:col-span-1 space-y-1"><label for="modalRelaunchDate" class="block text-sm font-medium text-gray-300">Date de Relance</label><input type="date" id="modalRelaunchDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"></div> 
+                </div> 
+            </fieldset> 
+            
+            <fieldset id="paymentDetailsContainer" class="hidden border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Détails Paiement</legend> <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"> <div><label for="modalPaymentType" class="block text-sm font-medium text-gray-300 mb-1">Type Paiement</label><select id="modalPaymentType" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="unique">Unique</option><option value="installments">Échelonné</option></select></div> <div><label for="modalAmountCollected" class="block text-sm font-medium text-gray-300 mb-1">Montant Total Contrat (€)</label><input type="number" id="modalAmountCollected" placeholder="ex: 3600" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></div> </div> <div id="installmentsFields" class="installments-fields hidden grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4"> <div><label for="modalInstallmentAmount" class="block text-sm font-medium text-gray-300 mb-1">Montant Échéance (€)</label><input type="number" id="modalInstallmentAmount" placeholder="ex: 720" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> <div><label for="modalNumberOfInstallments" class="block text-sm font-medium text-gray-300 mb-1">Nb Échéances</label><input type="number" id="modalNumberOfInstallments" placeholder="ex: 5" min="1" step="1" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> <div><label for="modalStartDateOfPayment" class="block text-sm font-medium text-gray-300 mb-1">Date 1ère Échéance</label><input type="date" id="modalStartDateOfPayment" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> </div> </fieldset> 
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-600 mt-6"><button id="modalCancelButton" type="button" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button><button id="modalSaveButton" type="button" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Enregistrer</button></div> <p id="modalError" class="text-red-400 text-sm mt-2 text-center h-4"></p> 
+        </div> 
+    </div>
+    
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"> <div class="bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm border border-slate-700 space-y-4"> <h2 class="text-lg font-semibold text-amber-300">Confirmer Suppression</h2> <p class="text-gray-300 text-sm my-3">Supprimer "<span id="deleteProspectName" class="font-bold"></span>" ? Irréversible.</p> <input type="hidden" id="deleteDocId"> <div class="flex justify-end space-x-3 pt-4"> <button id="deleteCancelButton" type="button" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button> <button id="deleteConfirmButton" type="button" class="bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Supprimer</button> </div> <p id="deleteError" class="text-red-400 text-sm mt-2 text-center h-4"></p> </div> </div>
+    <div id="startR1ConfirmModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"> <div class="bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm border border-slate-700 space-y-4"> <h2 class="text-lg font-semibold text-teal-300">Démarrer R1</h2> <p class="text-gray-300 text-sm my-3">Le prospect "<span id="startR1ProspectName" class="font-bold"></span>" est-il présent ?</p> <input type="hidden" id="startR1DocId"> <div class="flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0 sm:space-x-3 pt-4"> <button id="noShowButton" type="button" class="w-full sm:w-auto bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Absent (No Show)</button> <button id="startR1ConfirmButton" type="button" class="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Présent (Démarrer)</button> </div> <div class="flex justify-center pt-2"> <button id="startR1CancelButton" type="button" class="text-gray-400 hover:text-gray-300 text-sm">Annuler</button> </div> <p id="startR1Error" class="text-red-400 text-sm mt-2 text-center h-4"></p> </div> </div>
+
+    <!-- Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where, doc, updateDoc, Timestamp, deleteDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        let db, auth, appId;
+        let currentData = [];
+        let mainChartInstance = null; 
+        let currentViewMode = 'period';
+        let currentKpiFilter = null; // Pour suivre le filtre KPI
+
+        // --- Fonctions Utilitaires ---
+        function addMonths(date, months) { const d = new Date(date); d.setMonth(d.getMonth() + months); if (d.getDate() !== new Date(date).getDate()) { d.setDate(0); } return d; }
+        function parseDateString(dateString) { if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return null; const parts = dateString.split('-'); return new Date(Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10))); }
+        function getISODate(date) { return date.toISOString().split('T')[0]; }
+        function getISODateWithOffset(days) { const date = new Date(); date.setDate(date.getDate() + days); return date.toISOString().split('T')[0]; }
+        function getHHMMTime(date) { return date.toTimeString().split(' ')[0].substring(0, 5); }
+        function formatFirebaseTimestamp(timestamp) { if (!timestamp || typeof timestamp.toDate !== 'function') return 'N/A'; try { return timestamp.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return 'Date invalide'; } }
+        async function initFirebase() { try { const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" }; appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; const app = initializeApp(fC); db = getFirestore(app); auth = getAuth(app); return new Promise((resolve) => { onAuthStateChanged(auth, async (user) => { if (user) { resolve(); } else { try { await signInAnonymously(auth); resolve(); } catch (e){ console.error("Err anon:", e); resolve(); }} }); }); } catch (error) { console.error("Erreur init Firebase:", error); displayError("Erreur connexion DB."); return Promise.reject(error); } }
+
+        function renderFilteredData() {
+            const startDateStr = document.getElementById('startDate').value;
+            const endDateStr = document.getElementById('endDate').value;
+            const filterStartDate = parseDateString(startDateStr);
+            const filterEndDate = parseDateString(endDateStr);
+            if (!filterStartDate || !filterEndDate) { displayError("Dates de filtre invalides."); return; }
+            filterEndDate.setUTCHours(23, 59, 59, 999);
+            
+            let tableData = []; // Données pour la table
+            let kpiData = []; // Données pour les KPIs (toujours par date de R1)
+            
+            kpiData = currentData.filter(item => { const itemR1Date = parseDateString(item.prospectDate); return itemR1Date && itemR1Date >= filterStartDate && itemR1Date <= filterEndDate; });
+
+            if (currentKpiFilter) {
+                // Filtres pour la table basés sur le KPI cliqué
+                const fullPeriodData = currentData.filter(item => { const itemR1Date = parseDateString(item.prospectDate); return itemR1Date && itemR1Date >= filterStartDate && itemR1Date <= filterEndDate; });
+
+                switch (currentKpiFilter) {
+                    case 'kpi-card-r1-planned':
+                        tableData = fullPeriodData;
+                        break;
+                    case 'kpi-card-r1-noshow':
+                        tableData = fullPeriodData.filter(item => item.status === 'No Show R1');
+                        break;
+                    case 'kpi-card-r1-completed':
+                        tableData = fullPeriodData.filter(item => item.isR1Completed === true);
+                        break;
+                    case 'kpi-card-r2-count': // R2 Planifiés
+                        tableData = fullPeriodData.filter(item => item.isR2Completed === true || item.status === 'No Show R2');
+                        break;
+                    case 'kpi-card-r2-noshow':
+                        tableData = fullPeriodData.filter(item => item.status === 'No Show R2');
+                        break;
+                    case 'kpi-card-closing':
+                        tableData = fullPeriodData.filter(item => item.isClosed === true);
+                        break;
+                    case 'kpi-card-cash':
+                        tableData = fullPeriodData.filter(item => item.isClosed === true);
+                        break;
+                }
+            } else if (currentViewMode === 'waiting') {
+                tableData = currentData.filter(item => item.status === 'Waiting');
+                tableData.sort((a, b) => (a.relaunchDate || '9999-12-31').localeCompare(b.relaunchDate || '9999-12-31'));
+            } else {
+                tableData = kpiData; 
+            }
+
+            updateKPIs(kpiData, filterStartDate, filterEndDate); 
+            updateTable(tableData);
+            updateChart(kpiData, filterStartDate, filterEndDate); 
+            const totalWaiting = currentData.filter(item => item.status === 'Waiting').length;
+            safeSet('kpiWaitingCount', totalWaiting);
+        }
+
+        async function fetchDataAndDisplay() {
+             if (!db || !appId) { displayError("DB non prête."); return; }
+             const tableBody = document.getElementById('detailsTableBody');
+             tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
+             resetKPIs();
+             try {
+                 const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const querySnapshot = await getDocs(query(collection(db, collectionPath))); currentData = [];
+                 querySnapshot.forEach((doc) => { currentData.push({ id: doc.id, ...doc.data() }); });
+                 
+                 currentData.sort((a, b) => { 
+                     const dtA = `${a.prospectDate||'0000-00-00'}T${a.prospectTime||'00:00'}`; 
+                     const dtB = `${b.prospectDate||'0000-00-00'}T${b.prospectTime||'00:00'}`; 
+                     return dtB.localeCompare(dtA); 
+                 });
+                 
+                 attachListeners();
+                 setupKpiCardToggles(); 
+                 setupFiltersAndLoad(); // Lance le premier renderFilteredData
+                 await fetchAndDisplaySlidingKPIs(currentData); 
+
+             } catch (error) { 
+                 console.error("Erreur fetch Firestore:", error); 
+                 displayError("Erreur chargement données."); 
+                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
+             }
+         }
+        
+        async function fetchAndDisplaySlidingKPIs(data) {
+            if (!data) { console.warn("J-180: Données non prêtes."); return; }
+            const today = new Date(); const endDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999)); let startDate = new Date(endDate); startDate.setDate(startDate.getDate() - 180); startDate.setUTCHours(0, 0, 0, 0);
+            try {
+                 const slidingData = data.filter(item => { const iRD = parseDateString(item.prospectDate); return iRD && iRD >= startDate && iRD <= endDate; });
+                 const planned = slidingData.length;
+                 const completed = slidingData.filter(item => item.isR1Completed === true).length;
+                 const noShowR1 = slidingData.filter(item => item.status === 'No Show R1').length;
+                 const closed = slidingData.filter(item => item.isClosed === true).length;
+                 let cash = 0;
+                 slidingData.forEach(item => {
+                     if (item.isClosed === true) { cash += Number(item.amountCollected) || 0; }
+                 });
+
+                 const convRate = completed > 0 ? ((closed / completed) * 100).toFixed(0) : 0;
+                 safeSet('kpi-180-planned', planned); safeSet('kpi-180-completed', completed); safeSet('kpi-180-noshow-r1', `${noShowR1} (${(planned > 0 ? (noShowR1/planned*100).toFixed(0) : 0)}%)`); safeSet('kpi-180-closed', closed); safeSet('kpi-180-conv-rate', `${convRate}%`); safeSet('kpi-180-cash', `${cash.toLocaleString('fr-FR')}€`);
+            } catch(e) { console.error("Erreur calcul J-180:", e); safeSet('kpi-180-planned', 'Err'); }
+        }
+        
+        const safeSet = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; else console.warn(`Element KPI non trouvé: #${id}`); };
+
+        function updateKPIs(dataForPeriod, filterStart, filterEnd) {
+            // Étape 1: Compter les événements de base pour la période (basé sur la date de R1)
+            const r1Planned = dataForPeriod.length;
+            const r1NoShow = dataForPeriod.filter(p => p.status === 'No Show R1').length;
+            const r1Completed = dataForPeriod.filter(p => p.isR1Completed === true).length;
+            const r2Planned = dataForPeriod.filter(p => p.isR2Completed === true || p.status === 'No Show R2').length;
+            const r2NoShow = dataForPeriod.filter(p => p.status === 'No Show R2').length;
+            const closedCount = dataForPeriod.filter(p => p.isClosed === true).length;
+            
+            // Étape 2: Calculer les taux de conversion et les pourcentages
+            const noShowR1Rate = r1Planned > 0 ? (r1NoShow / r1Planned * 100) : 0;
+            const noShowR2Rate = r2Planned > 0 ? (r2NoShow / r2Planned * 100) : 0;
+            const r1ToR2Rate = r1Completed > 0 ? (r2Planned / r1Completed * 100) : 0;
+            
+            // Un R2 effectué est un R2 planifié qui n'est pas un "No Show"
+            const r2Completed = r2Planned - r2NoShow;
+            const r2ToClosedRate = r2Completed > 0 ? (closedCount / r2Completed) * 100 : 0;
+
+            // Étape 3: Calculer le cash (inchangé)
+            let cashCollectedInPeriod = 0;
+            let cashFutureRecurring = 0;
+            currentData.forEach(item => { if (item.isClosed === true) { const pT=item.paymentType||'unique'; const tA=Number(item.amountCollected)||0; if(pT==='unique'){ const paymentDate = parseDateString(item.prospectDate); if(paymentDate && paymentDate >= filterStart && paymentDate <= filterEnd){ cashCollectedInPeriod += tA; }} else if(pT==='installments'){ const iA=Number(item.installmentAmount)||0; const nI=parseInt(item.numberOfInstallments)||0; const fPD=parseDateString(item.startDateOfPayment); if(iA>0&&nI>0&&fPD){ for(let i=0;i<nI;i++){ const pD=addMonths(fPD,i); if(pD>=filterStart&&pD<=filterEnd){ cashCollectedInPeriod+=iA; } else if(pD>filterEnd){ cashFutureRecurring+=iA; }}}} } });
+
+            // Étape 4: Mettre à jour l'interface utilisateur
+            safeSet('kpiR1Planned', r1Planned);
+            safeSet('kpiR1NoShowRate', `${noShowR1Rate.toFixed(1)}%`);
+            safeSet('kpiR1NoShowCount', `(${r1NoShow})`);
+            safeSet('kpiR1Completed', r1Completed);
+            safeSet('kpiR2Count', r2Planned); // "R2 Planifiés"
+            safeSet('kpiR2NoShowRate', `${noShowR2Rate.toFixed(1)}%`);
+            safeSet('kpiR2NoShowCount', `(${r2NoShow})`);
+            safeSet('kpiClosingCount', closedCount);
+            safeSet('kpiR1toR2Rate', `${r1ToR2Rate.toFixed(1)}%`);
+            safeSet('kpiR1toR2Count', `(${r2Planned})`);
+            safeSet('kpiR2toClosedRate', `${r2ToClosedRate.toFixed(1)}%`);
+            safeSet('kpiR2toClosedCount', `(${closedCount})`);
+            safeSet('kpiCashCollected', `${cashCollectedInPeriod.toLocaleString('fr-FR')}€`);
+            safeSet('kpiCashFutureRecurring', `${cashFutureRecurring.toLocaleString('fr-FR')}€`);
+        }
+        
+        function updateChart(dataForChart, filterStart, filterEnd) { const ctx = document.getElementById('mainChart'); if (!ctx) return; const dailyData = {}; let currentDate = new Date(filterStart); while (currentDate <= filterEnd) { const dateString = getISODate(currentDate); dailyData[dateString] = { r1: 0, r1_planned: 0, r1_noshow: 0, r2_count: 0, r2_noshow: 0, closed: 0, cash: 0 }; currentDate.setDate(currentDate.getDate() + 1); } dataForChart.forEach(item => { const status = item.status || 'R1 Scheduled'; const itemR1DateStr = item.prospectDate; const itemR1Date = parseDateString(itemR1DateStr); if (itemR1Date && itemR1Date >= filterStart && itemR1Date <= filterEnd) { const dateStr = itemR1DateStr; if(dailyData[dateStr]) { dailyData[dateStr].r1_planned++; if (status === 'No Show R1') dailyData[dateStr].r1_noshow++; if (item.isR1Completed === true) dailyData[dateStr].r1++; if (item.isR2Completed === true || status === 'No Show R2') dailyData[dateStr].r2_count++; if (status === 'No Show R2') dailyData[dateStr].r2_noshow++; if (item.isClosed === true) dailyData[dateStr].closed++; } } if (item.isClosed === true) { const pT = item.paymentType || 'unique'; let amt = 0; if (pT === 'unique') { const pD = itemR1Date; amt = Number(item.amountCollected) || 0; if (pD && pD >= filterStart && pD <= filterEnd) { const cashDateStr = getISODate(pD); if (dailyData[cashDateStr]) dailyData[cashDateStr].cash += amt; } } else if (pT === 'installments') { const pD = parseDateString(item.startDateOfPayment); amt = Number(item.installmentAmount) || 0; const nI = parseInt(item.numberOfInstallments) || 0; if (pD && amt > 0 && nI > 0) { for (let i = 0; i < nI; i++) { const cPD = addMonths(pD, i); if (cPD >= filterStart && cPD <= filterEnd) { const cPDS = getISODate(cPD); if (dailyData[cPDS]) dailyData[cPDS].cash += amt; } } } } } }); const labels = Object.keys(dailyData).sort(); const r1PlannedData = labels.map(date => dailyData[date].r1_planned); const r1NoShowData = labels.map(date => dailyData[date].r1_noshow); const r1Data = labels.map(date => dailyData[date].r1); const r2CountData = labels.map(date => dailyData[date].r2_count); const r2NoShowData = labels.map(date => dailyData[date].r2_noshow); const closedData = labels.map(date => dailyData[date].closed); const cashData = labels.map(date => dailyData[date].cash); if (mainChartInstance) { mainChartInstance.destroy(); } const isHidden = (id) => { const card = document.getElementById(id); return card ? !card.classList.contains('kpi-chart-active') : true; }; mainChartInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'R1 Planifiés', data: r1PlannedData, borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-planned') }, { label: 'No Show R1', data: r1NoShowData, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-noshow') }, { label: 'R1 Effectués', data: r1Data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-completed') }, { label: 'R2 Planifiés', data: r2CountData, borderColor: 'rgba(168, 85, 247, 1)', backgroundColor: 'rgba(168, 85, 247, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-count') }, { label: 'No Show R2', data: r2NoShowData, borderColor: 'rgba(185, 28, 28, 1)', backgroundColor: 'rgba(185, 28, 28, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-noshow') }, { label: 'Closings', data: closedData, borderColor: 'rgba(34, 197, 94, 1)', backgroundColor: 'rgba(34, 197, 94, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-closing') }, { label: 'Cash Période (€)', data: cashData, borderColor: 'rgba(20, 184, 166, 1)', backgroundColor: 'rgba(20, 184, 166, 0.7)', tension: 0.1, yAxisID: 'yCash', hidden: isHidden('kpi-card-cash') }, ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, yCount: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#374151' }, title: { display: true, text: 'Nombre', color: '#9ca3af' } }, yCash: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#9ca3af', callback: (value) => `${value}€` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Montant (€)', color: '#9ca3af' } } }, plugins: { legend: { display: false }, tooltip: { titleFont: { size: 14 }, bodyFont: { size: 12 }, footerFont: { size: 10 } } } } }); 
+            updateChartVisibility();
+        }
+        
+        function updateChartVisibility() { if (!mainChartInstance) return; try { const isHidden = (id) => { const card = document.getElementById(id); return card ? !card.classList.contains('kpi-chart-active') : true; }; mainChartInstance.data.datasets[0].hidden = isHidden('kpi-card-r1-planned'); mainChartInstance.data.datasets[1].hidden = isHidden('kpi-card-r1-noshow'); mainChartInstance.data.datasets[2].hidden = isHidden('kpi-card-r1-completed'); mainChartInstance.data.datasets[3].hidden = isHidden('kpi-card-r2-count'); mainChartInstance.data.datasets[4].hidden = isHidden('kpi-card-r2-noshow'); mainChartInstance.data.datasets[5].hidden = isHidden('kpi-card-closing'); mainChartInstance.data.datasets[6].hidden = isHidden('kpi-card-cash'); mainChartInstance.update(); } catch (e) { console.error("Erreur MAJ visibilité graphique:", e); } }
+
+        function deactiveAllKpiCards() {
+            document.querySelectorAll('.kpi-card-toggle').forEach(card => {
+                card.classList.remove('kpi-chart-active');
+                card.classList.add('opacity-60');
+            });
+            updateChartVisibility();
+        }
+
+        function setupKpiCardToggles() {
+            const kpiCards = [ 'kpi-card-r1-planned', 'kpi-card-r1-noshow', 'kpi-card-r1-completed', 'kpi-card-r2-count', 'kpi-card-r2-noshow', 'kpi-card-closing', 'kpi-card-cash' ];
+            
+            const kpiToggleLogic = (e) => {
+                const card = e.currentTarget;
+                const cardId = card.id;
+                const wasActive = card.classList.contains('kpi-chart-active');
+                
+                deactiveAllKpiCards(); // Cache tout visuellement
+                document.getElementById('viewTogglePeriod').classList.remove('active');
+                document.getElementById('viewToggleWaiting').classList.remove('active');
+
+                if (wasActive) {
+                    currentKpiFilter = null;
+                    document.getElementById('viewTogglePeriod').click(); 
+                } else {
+                    card.classList.add('kpi-chart-active');
+                    card.classList.remove('opacity-60');
+                    currentKpiFilter = cardId; 
+                    renderFilteredData(); 
+                }
+                updateChartVisibility(); // Mettre à jour le graphique après le changement
+            };
+
+            kpiCards.forEach(id => {
+                const cardEl = document.getElementById(id);
+                if (cardEl) {
+                    if (id === 'kpi-card-r1-completed') { // Actif par défaut
+                        cardEl.classList.add('kpi-chart-active');
+                        cardEl.classList.remove('opacity-60');
+                    } else {
+                        cardEl.classList.remove('kpi-chart-active');
+                        cardEl.classList.add('opacity-60');
+                    }
+                    cardEl.addEventListener('click', kpiToggleLogic);
+                } else { console.warn(`KPI Card Toggle non trouvé: #${id}`); }
+            });
+            const cashFutureCard = document.getElementById('kpi-card-cash-future');
+            if(cashFutureCard) cashFutureCard.classList.remove('kpi-card-toggle', 'opacity-60');
+        }
+        
+        function updateTable(data) {
+             const tB=document.getElementById('detailsTableBody');
+             if(!tB) return;
+             if(data.length===0){tB.innerHTML=`<tr><td colspan="9" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
+             tB.innerHTML = data.map(i => {
+                 const sV = i.status || 'R1 Scheduled'; const sC = getStatusClass(sV);
+                 const tA = Number(i.amountCollected) || 0;
+                 const qST = (i.qualificationStatus && i.qualificationStatus !== 'N/A') ? i.qualificationStatus.replace(' (Client Rêvé)','').trim() : 'N/A';
+                 const qC = qST.includes('VERT')?'text-green-400':(qST.includes('ROUGE')?'text-red-400':'text-gray-400');
+                 const pN = i.prospectName || 'N/A'; const ePn = pN.replace(/"/g,'&quot;');
+                 const dTD = `${i.prospectDate||'N/A'} ${i.prospectTime?`<span class="text-xs text-gray-400">${i.prospectTime}</span>`:''}`;
+                 const dTD_R2 = `${i.prospectDateR2||'-'} ${i.prospectTimeR2 ? `<span class="text-xs text-gray-400">${i.prospectTimeR2}</span>` : ''}`;
+                 const relaunchDate = i.relaunchDate ? `<span class="text-blue-300">${i.relaunchDate}</span>` : '-';
+                 
+                 let aB; if(sV==='R1 Scheduled'){aB=`<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;} else {aB=`<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Détails</a>`;}
+                 
+                 return `<tr>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 truncate max-w-xs">${pN}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700"><span class="${qC}">${qST}</span></td>
+                     <td class="px-1 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-center">${i.scores?.total??'N/A'}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente')}</span></td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD_R2}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${relaunchDate}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
+                 </tr>`;
+             }).join('');
+         }
+
+        function getStatusClass(status) { switch(status){ case 'R1 Scheduled': return 'status-scheduled'; case 'Waiting': return 'status-waiting'; case 'No Show R1': return 'status-noshow-r1'; case 'No Show R2': return 'status-noshow-r2'; case 'R1 Completed':return 'status-r1';case 'R2 Scheduled':return 'status-r2';case 'Closed':return 'status-closed';case 'Lost':return 'status-lost';default:return 'status-other';} }
+        
+        function resetKPIs() {
+            const kpiIds = ['kpiR1Planned', 'kpiR1NoShowCount', 'kpiR1Completed', 'kpiR2Count', 'kpiR2NoShowCount', 'kpiClosingCount', 'kpiR1toR2Count', 'kpiR2toClosedCount'];
+            kpiIds.forEach(id => safeSet(id, id.includes('Count') ? '(0)' : '0'));
+            safeSet('kpiR1NoShowRate', '0%');
+            safeSet('kpiR2NoShowRate', '0%');
+            safeSet('kpiR1toR2Rate', '0%'); 
+            safeSet('kpiR2toClosedRate', '0%');
+            safeSet('kpiCashCollected', '0€');
+            safeSet('kpiCashFutureRecurring', '0€');
+            safeSet('kpiWaitingCount', '0');
+        }
+        
+        function setupFiltersAndLoad() {
+            const s=document.getElementById('startDate'),e=document.getElementById('endDate'),f=document.getElementById('filterButton');
+            const shortcuts=document.getElementById('dateShortcuts');
+            const viewToggles = document.getElementById('viewToggles');
+            const viewPeriodBtn = document.getElementById('viewTogglePeriod');
+            const viewWaitingBtn = document.getElementById('viewToggleWaiting');
+            if(!s || !e || !f || !shortcuts || !viewToggles || !viewPeriodBtn || !viewWaitingBtn) { console.error("Filter elements missing!"); return; }
+
+            function setDates(startDate, endDate) { s.value = getISODate(startDate); e.value = getISODate(endDate); validateDates(); }
+            
+            function handleShortcutClick(ev){
+                if(ev.target.tagName!=='BUTTON')return;
+                shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active'));
+                ev.target.classList.add('active');
+                currentViewMode = 'period';
+                currentKpiFilter = null;
+                viewPeriodBtn.classList.add('active');
+                viewWaitingBtn.classList.remove('active');
+                deactiveAllKpiCards(); 
+                const defaultActiveCard = document.getElementById('kpi-card-r1-completed');
+                if(defaultActiveCard) {
+                    defaultActiveCard.classList.add('kpi-chart-active');
+                    defaultActiveCard.classList.remove('opacity-60');
+                }
+                updateChartVisibility();
+                
+                const days=ev.target.dataset.days; const today=new Date(); let startDate=new Date(today),endDate=new Date(today);
+                if(days==='month'){startDate=new Date(today.getFullYear(),today.getMonth(),1);endDate=new Date(today.getFullYear(),today.getMonth()+1,0);}
+                else{const numDays=parseInt(days,10); if(numDays===0){startDate.setDate(today.getDate());}else{startDate.setDate(today.getDate()-numDays+1);}}
+                const sUTC=new Date(Date.UTC(startDate.getFullYear(),startDate.getMonth(),startDate.getDate())); const eUTC=new Date(Date.UTC(endDate.getFullYear(),endDate.getMonth(),endDate.getDate()));
+                setDates(sUTC,eUTC);
+                renderFilteredData();
+            }
+            shortcuts.addEventListener('click',handleShortcutClick);
+            
+            function validateDates(){f.disabled=!s.value||!e.value;}
+            s.addEventListener('input',()=>{shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active')); validateDates(); viewPeriodBtn.click(); });
+            e.addEventListener('input',()=>{shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active')); validateDates(); viewPeriodBtn.click(); });
+            f.addEventListener('click',()=>{ renderFilteredData(); });
+            
+            viewPeriodBtn.addEventListener('click', () => {
+                currentViewMode = 'period';
+                currentKpiFilter = null;
+                viewPeriodBtn.classList.add('active');
+                viewWaitingBtn.classList.remove('active');
+                deactiveAllKpiCards();
+                const defaultActiveCard = document.getElementById('kpi-card-r1-completed');
+                if(defaultActiveCard) {
+                    defaultActiveCard.classList.add('kpi-chart-active');
+                    defaultActiveCard.classList.remove('opacity-60');
+                }
+                updateChartVisibility();
+                const activeShortcut = shortcuts.querySelector('button.active') || shortcuts.querySelector('button[data-days="month"]');
+                if(activeShortcut) activeShortcut.click();
+            });
+            viewWaitingBtn.addEventListener('click', () => {
+                currentViewMode = 'waiting';
+                currentKpiFilter = null;
+                viewWaitingBtn.classList.add('active');
+                viewPeriodBtn.classList.remove('active');
+                shortcuts.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                deactiveAllKpiCards();
+                updateChartVisibility();
+                renderFilteredData();
+            });
+            
+            const monthShortcut = shortcuts.querySelector('button[data-days="month"]');
+            if(monthShortcut) monthShortcut.click();
+        }
+        
+        function displayError(message) { let d=document.getElementById('dashboardError');if(!d){d=document.createElement('div');d.id='dashboardError';d.className='fixed bottom-4 right-4 p-4 bg-red-800 text-white rounded-lg shadow-xl z-[60]';document.body.appendChild(d);}d.textContent=message;setTimeout(()=>d.remove(),5000); }
+        
+        const modalStatusSelect = document.getElementById('modalStatus');
+        const cbR1 = document.getElementById('modalIsR1Completed');
+        const cbR2 = document.getElementById('modalIsR2Completed');
+        const cbClosed = document.getElementById('modalIsClosed');
+        
+        function updateModalCheckboxesLogic() {
+            if (!cbR1 || !cbR2 || !cbClosed) return;
+            // Un R2 ou un Closing implique un R1 effectué.
+            if (cbClosed.checked || cbR2.checked) {
+                cbR1.checked = true;
+                cbR1.disabled = true;
+            } else {
+                cbR1.disabled = false;
+            }
+            // Un closing implique un R2 effectué.
+            if(cbClosed.checked) {
+                cbR2.checked = true;
+                cbR2.disabled = true;
+            } else {
+                cbR2.disabled = false;
+            }
+
+            const fieldsR2 = document.getElementById('modalR2Fields');
+            const paymentDetailsContainer = document.getElementById('paymentDetailsContainer');
+            if(fieldsR2) fieldsR2.classList.toggle('hidden', !cbR2.checked);
+            if(paymentDetailsContainer) paymentDetailsContainer.classList.toggle('hidden', !cbClosed.checked);
+        }
+
+        if(cbR1) cbR1.addEventListener('change', updateModalCheckboxesLogic);
+        if(cbR2) cbR2.addEventListener('change', updateModalCheckboxesLogic);
+        if(cbClosed) cbClosed.addEventListener('change', updateModalCheckboxesLogic);
+        
+        if(modalStatusSelect) modalStatusSelect.addEventListener('change', () => {
+             const status = modalStatusSelect.value;
+             const lostReasonContainer = document.getElementById('modalLostReasonContainer');
+             const relaunchDateContainer = document.getElementById('modalRelaunchDateContainer');
+             if(!lostReasonContainer || !relaunchDateContainer) return;
+             
+             const showReason = status === 'Lost' || status.startsWith('No Show');
+             const showRelaunch = status === 'Waiting';
+             lostReasonContainer.classList.toggle('hidden', !showReason);
+             relaunchDateContainer.classList.toggle('hidden', !showRelaunch);
+             
+             const today = new Date(); const todayStr = getISODate(today); const todayTime = getHHMMTime(today);
+             
+             if (status === 'R1 Completed' && !cbR1.checked) { cbR1.checked = true; }
+             if (status === 'R2 Scheduled' && !cbR2.checked) { cbR2.checked = true; }
+             if (status === 'Closed' && !cbClosed.checked) { cbClosed.checked = true; }
+             if (status === 'No Show R1') { cbR1.checked = false; }
+             updateModalCheckboxesLogic();
+
+             const dateR2Input = document.getElementById('modalProspectDateR2');
+             if (status === 'R2 Scheduled' && dateR2Input && !dateR2Input.value) {
+                 dateR2Input.value = todayStr;
+                 document.getElementById('modalProspectTimeR2').value = todayTime;
+             }
+             const relaunchInput = document.getElementById('modalRelaunchDate');
+             if (status === 'Waiting' && relaunchInput && !relaunchInput.value) {
+                 relaunchInput.value = getISODateWithOffset(7);
+             }
+             const paymentDateInput = document.getElementById('modalStartDateOfPayment');
+             if (status === 'Closed' && paymentDateInput && !paymentDateInput.value) {
+                 paymentDateInput.value = todayStr;
+             }
+        });
+        
+        function setupModalPaymentLogic(){
+            const paymentTypeSelect = document.getElementById('modalPaymentType');
+            const installmentsFieldsDiv = document.getElementById('installmentsFields');
+            const amountCollectedInput = document.getElementById('modalAmountCollected');
+            const installmentAmountInput = document.getElementById('modalInstallmentAmount');
+            const numberOfInstallmentsInput = document.getElementById('modalNumberOfInstallments');
+            if(!paymentTypeSelect) return;
+
+            function calculateTotalAmount() { 
+                if (paymentTypeSelect.value === 'installments') { 
+                    const i = Number(installmentAmountInput.value) || 0; 
+                    const n = parseInt(numberOfInstallmentsInput.value) || 0; 
+                    if (i > 0 && n > 0) amountCollectedInput.value = i * n;
+                }
+            }
+            if(installmentAmountInput) installmentAmountInput.addEventListener('input', calculateTotalAmount);
+            if(numberOfInstallmentsInput) numberOfInstallmentsInput.addEventListener('input', calculateTotalAmount);
+            paymentTypeSelect.addEventListener('change', () => { 
+                if(installmentsFieldsDiv) installmentsFieldsDiv.classList.toggle('hidden', paymentTypeSelect.value !== 'installments'); 
+                if (paymentTypeSelect.value === 'installments') calculateTotalAmount();
+            });
+        }
+        setupModalPaymentLogic();
+
+        function openEditModal(docId) { 
+             const pD=currentData.find(i=>i.id===docId); if(!pD)return; 
+             document.getElementById('modalProspectName').textContent=pD.prospectName||'N/A'; 
+             document.getElementById('modalDocId').value=docId; 
+             
+             if(cbR1) cbR1.disabled = false;
+             if(cbR2) cbR2.disabled = false;
+
+             document.getElementById('modalProspectDate').value = pD.prospectDate || ''; 
+             document.getElementById('modalProspectTime').value = pD.prospectTime || ''; 
+             document.getElementById('modalProspectDateR2').value = pD.prospectDateR2 || ''; 
+             document.getElementById('modalProspectTimeR2').value = pD.prospectTimeR2 || ''; 
+             
+             if(cbR1) cbR1.checked = pD.isR1Completed || false;
+             if(cbR2) cbR2.checked = pD.isR2Completed || false;
+             if(cbClosed) cbClosed.checked = pD.isClosed || false;
+             updateModalCheckboxesLogic();
+             
+             const cS=pD.status||'R1 Scheduled'; 
+             if(modalStatusSelect) modalStatusSelect.value=cS; 
+             document.getElementById('modalLostReason').value=pD.lostReason||''; 
+             document.getElementById('modalRelaunchDate').value = pD.relaunchDate || ''; 
+             const showReason = cS === 'Lost' || cS.startsWith('No Show');
+             const showRelaunch = cS === 'Waiting'; 
+             document.getElementById('modalLostReasonContainer').classList.toggle('hidden', !showReason); 
+             document.getElementById('modalRelaunchDateContainer').classList.toggle('hidden', !showRelaunch); 
+             
+             const pT=pD.paymentType||'unique'; 
+             document.getElementById('modalPaymentType').value = pT; 
+             document.getElementById('modalAmountCollected').value=pD.amountCollected||''; 
+             document.getElementById('modalInstallmentAmount').value=pD.installmentAmount||''; 
+             document.getElementById('modalNumberOfInstallments').value=pD.numberOfInstallments||''; 
+             document.getElementById('modalStartDateOfPayment').value=pD.startDateOfPayment||''; 
+             document.getElementById('installmentsFields').classList.toggle('hidden',pT!=='installments');
+             document.getElementById('modalError').textContent='';
+             document.getElementById('editModal').classList.remove('hidden'); 
+        }
+        function closeEditModal() { const modal = document.getElementById('editModal'); if(modal) modal.classList.add('hidden'); }
+        
+        async function saveModalChanges() {
+             const dId=document.getElementById('modalDocId').value; 
+             const nS=modalStatusSelect.value; 
+             const mE=document.getElementById('modalError'); 
+             const sB=document.getElementById('modalSaveButton');
+             if(!dId || !nS || !mE || !sB) return;
+             
+             const isR1 = cbR1.checked; const isR2 = cbR2.checked; const isClosed = cbClosed.checked;
+             const newProspectDate = document.getElementById('modalProspectDate').value; 
+             if (!newProspectDate) { mE.textContent = "La date de R1 est requise."; return; }
+             
+             mE.textContent='';sB.disabled=true;sB.textContent='Sauvegarde...';
+             
+             try {
+                 const cP=`artifacts/${appId}/public/data/r1_closings`; const dR=doc(db,cP,dId);
+                 const dTU={
+                     status:nS, 
+                     isR1Completed: nS === 'No Show R1' ? false : isR1, // Double-check logic
+                     isR2Completed: isR2,
+                     isClosed: isClosed,
+                     prospectDate: newProspectDate,
+                     prospectTime: document.getElementById('modalProspectTime').value,
+                     lastUpdatedAt:Timestamp.now()
+                 };
+                 
+                 if (isR2) { dTU.prospectDateR2 = document.getElementById('modalProspectDateR2').value || null; dTU.prospectTimeR2 = document.getElementById('modalProspectTimeR2').value || null; }
+                 else { dTU.prospectDateR2 = deleteField(); dTU.prospectTimeR2 = deleteField(); }
+                 
+                 if (nS === 'Waiting') { dTU.relaunchDate = document.getElementById('modalRelaunchDate').value || null; } 
+                 else { dTU.relaunchDate = deleteField(); }
+                 
+                 if(nS==='Lost' || nS.startsWith('No Show')){ dTU.lostReason=document.getElementById('modalLostReason').value.trim(); } else { dTU.lostReason=deleteField(); }
+
+                 if(isClosed){
+                    const nPT=document.getElementById('modalPaymentType').value;
+                    dTU.paymentType=nPT;
+                    dTU.amountCollected=Number(document.getElementById('modalAmountCollected').value)||0;
+                    if(nPT==='installments'){
+                        const nIA=Number(document.getElementById('modalInstallmentAmount').value)||0;
+                        const nNI=parseInt(document.getElementById('modalNumberOfInstallments').value)||0;
+                        const nSD=document.getElementById('modalStartDateOfPayment').value||null;
+                        if(!nIA||!nNI||!nSD){throw new Error("Détails échelonnement manquants.");}
+                        dTU.installmentAmount=nIA;dTU.numberOfInstallments=nNI;dTU.startDateOfPayment=nSD;
+                    } else {
+                        dTU.installmentAmount=deleteField();dTU.numberOfInstallments=deleteField();dTU.startDateOfPayment=deleteField();
+                    }
+                 } else {
+                    dTU.paymentType=deleteField();dTU.amountCollected=deleteField();dTU.installmentAmount=deleteField();dTU.numberOfInstallments=deleteField();dTU.startDateOfPayment=deleteField();
+                 }
+                 
+                 await updateDoc(dR,dTU);
+                 closeEditModal();
+                 
+                 const docIndex = currentData.findIndex(item => item.id === dId);
+                 if (docIndex > -1) { 
+                     // Fusionner les changements dans les données locales
+                     const oldData = currentData[docIndex];
+                     const updatedData = { ...oldData, ...dTU };
+
+                     // Simuler les deleteField pour la mise à jour locale
+                     Object.keys(dTU).forEach(key => {
+                         if (dTU[key] && typeof dTU[key] === 'object' && dTU[key]._doNotReadJustReturnUndefined === true) {
+                             delete updatedData[key];
+                         }
+                     });
+                     currentData[docIndex] = updatedData;
+                 }
+                 renderFilteredData(); 
+             } catch(error){ console.error("Err update:",error); mE.textContent=error.message || "Erreur sauvegarde."; }
+             finally { sB.disabled=false; sB.textContent='Enregistrer'; }
+        }
+        function openDeleteConfirmModal(docId, prospectName) { document.getElementById('deleteProspectName').textContent=prospectName;document.getElementById('deleteDocId').value=docId;document.getElementById('deleteError').textContent='';document.getElementById('deleteConfirmModal').classList.remove('hidden'); }
+        function closeDeleteConfirmModal() { document.getElementById('deleteConfirmModal').classList.add('hidden'); }
+        async function confirmDeletion() { const dId=document.getElementById('deleteDocId').value;const dE=document.getElementById('deleteError');const cB=document.getElementById('deleteConfirmButton');if(!dId){dE.textContent="ID manquant.";return;} dE.textContent='';cB.disabled=true;cB.textContent='Suppression...';try{const cP=`artifacts/${appId}/public/data/r1_closings`;const dR=doc(db,cP,dId);await deleteDoc(dR);closeDeleteConfirmModal(); currentData = currentData.filter(item => item.id !== dId); renderFilteredData(); }catch(error){console.error(`Err suppression ${dId}:`,error);dE.textContent="Erreur suppression.";}finally{cB.disabled=false;cB.textContent='Supprimer';} }
+        function openStartR1ConfirmModal(docId, prospectName) { document.getElementById('startR1ProspectName').textContent = prospectName; document.getElementById('startR1DocId').value = docId; document.getElementById('startR1Error').textContent = ''; document.getElementById('startR1ConfirmModal').classList.remove('hidden'); }
+        function closeStartR1ConfirmModal() { document.getElementById('startR1ConfirmModal').classList.add('hidden'); }
+        async function handleNoShow() { const docId = document.getElementById('startR1DocId').value; const errorP = document.getElementById('startR1Error'); const noShowButton = document.getElementById('noShowButton'); if (!docId || !db) { errorP.textContent = 'Erreur ID/DB'; return; } errorP.textContent = ''; noShowButton.disabled = true; noShowButton.textContent = 'Enregistrement...'; try { const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const docRef = doc(db, collectionPath, docId); await updateDoc(docRef, { status: 'No Show R1', isR1Completed: false, isR2Completed: false, isClosed: false, lastUpdatedAt: Timestamp.now() }); closeStartR1ConfirmModal(); const docIndex = currentData.findIndex(item => item.id === docId); if (docIndex > -1) { currentData[docIndex].status = 'No Show R1'; currentData[docIndex].isR1Completed = false; currentData[docIndex].isR2Completed = false; currentData[docIndex].isClosed = false;} renderFilteredData(); } catch (error) { console.error(`Erreur No Show ${docId}:`, error); errorP.textContent = 'Erreur sauvegarde No Show.'; } finally { noShowButton.disabled = false; noShowButton.textContent = 'Absent (No Show)'; } }
+        function handleStartR1Confirm() { const docId = document.getElementById('startR1DocId').value; if (docId) { window.location.href = `script.html?docId=${docId}`; closeStartR1ConfirmModal(); } else { document.getElementById('startR1Error').textContent = 'Erreur ID manquant.'; } }
+        function attachListeners() { 
+            const tableBody = document.getElementById('detailsTableBody');
+            if(tableBody) tableBody.addEventListener('click',(e)=>{ if(e.target.classList.contains('edit-btn')){ openEditModal(e.target.dataset.docId); } else if(e.target.classList.contains('delete-btn')){ openDeleteConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); } else if(e.target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); } }); 
+            document.getElementById('modalCancelButton')?.addEventListener('click',closeEditModal);
+            document.getElementById('modalSaveButton')?.addEventListener('click',saveModalChanges);
+            document.getElementById('editModal')?.addEventListener('click',(e)=>{if(e.target.id==='editModal')closeEditModal();}); 
+            document.getElementById('deleteCancelButton')?.addEventListener('click',closeDeleteConfirmModal);
+            document.getElementById('deleteConfirmButton')?.addEventListener('click',confirmDeletion);
+            document.getElementById('deleteConfirmModal')?.addEventListener('click',(e)=>{if(e.target.id==='deleteConfirmModal')closeDeleteConfirmModal();}); 
+            document.getElementById('startR1CancelButton')?.addEventListener('click', closeStartR1ConfirmModal); 
+            document.getElementById('noShowButton')?.addEventListener('click', handleNoShow); 
+            document.getElementById('startR1ConfirmButton')?.addEventListener('click', handleStartR1Confirm); 
+            document.getElementById('startR1ConfirmModal')?.addEventListener('click', (e) => { if (e.target.id === 'startR1ConfirmModal') closeStartR1ConfirmModal(); }); 
+        }
+        
+        // --- Démarrage ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initFirebase();
+                await fetchDataAndDisplay();
+            } catch (error) {
+                console.error("Erreur critique au démarrage:", error);
+                displayError("Erreur de chargement initiale. Vérifiez la console.");
+            }
+        });
+    </script>
+
+</body>
+</html>
