@@ -259,48 +259,57 @@
             if (!filterStartDate || !filterEndDate) { displayError("Dates de filtre invalides."); return; }
             filterEndDate.setUTCHours(23, 59, 59, 999);
             
-            let tableData = []; // Données pour la table
-            let kpiData = []; // Données pour les KPIs (toujours par date de R1)
+            // This is the base data for the selected period, used for KPIs, chart, and as a base for table filtering.
+            // It should contain ALL prospects with an R1 scheduled in this period, regardless of status.
+            const dataForPeriod = currentData.filter(item => { 
+                const itemR1Date = parseDateString(item.prospectDate); 
+                return itemR1Date && itemR1Date >= filterStartDate && itemR1Date <= filterEndDate; 
+            });
             
-            kpiData = currentData.filter(item => { const itemR1Date = parseDateString(item.prospectDate); return itemR1Date && itemR1Date >= filterStartDate && itemR1Date <= filterEndDate; });
-
+            let tableData; // This will hold the final data for the table view.
+            
             if (currentKpiFilter) {
-                // Filtres pour la table basés sur le KPI cliqué
-                const fullPeriodData = currentData.filter(item => { const itemR1Date = parseDateString(item.prospectDate); return itemR1Date && itemR1Date >= filterStartDate && itemR1Date <= filterEndDate; });
-
+                // A KPI card is active, so filter the table data based on it.
                 switch (currentKpiFilter) {
                     case 'kpi-card-r1-planned':
-                        tableData = fullPeriodData;
+                        tableData = dataForPeriod; // "R1 Planifiés" shows everyone in the period.
                         break;
                     case 'kpi-card-r1-noshow':
-                        tableData = fullPeriodData.filter(item => item.status === 'No Show R1');
+                        tableData = dataForPeriod.filter(item => item.status === 'No Show R1');
                         break;
                     case 'kpi-card-r1-completed':
-                        tableData = fullPeriodData.filter(item => item.isR1Completed === true);
+                        tableData = dataForPeriod.filter(item => item.isR1Completed === true);
                         break;
                     case 'kpi-card-r2-count': // R2 Planifiés
-                        tableData = fullPeriodData.filter(item => item.isR2Completed === true || item.status === 'No Show R2');
+                        tableData = dataForPeriod.filter(item => item.isR2Completed === true || item.status === 'No Show R2');
                         break;
                     case 'kpi-card-r2-noshow':
-                        tableData = fullPeriodData.filter(item => item.status === 'No Show R2');
+                        tableData = dataForPeriod.filter(item => item.status === 'No Show R2');
                         break;
                     case 'kpi-card-closing':
-                        tableData = fullPeriodData.filter(item => item.isClosed === true);
+                        tableData = dataForPeriod.filter(item => item.isClosed === true);
                         break;
                     case 'kpi-card-cash':
-                        tableData = fullPeriodData.filter(item => item.isClosed === true);
+                        tableData = dataForPeriod.filter(item => item.isClosed === true);
+                        break;
+                    default:
+                        // If an unknown filter is set, fall back to showing everything for the period.
+                        tableData = dataForPeriod;
                         break;
                 }
             } else if (currentViewMode === 'waiting') {
+                // "En Attente" view shows all prospects with this status, regardless of date range.
                 tableData = currentData.filter(item => item.status === 'Waiting');
                 tableData.sort((a, b) => (a.relaunchDate || '9999-12-31').localeCompare(b.relaunchDate || '9999-12-31'));
             } else {
-                tableData = kpiData; 
+                // Default 'period' view: show all prospects within the date range.
+                tableData = dataForPeriod; 
             }
 
-            updateKPIs(kpiData, filterStartDate, filterEndDate); 
+            // Update UI components with the calculated data.
+            updateKPIs(dataForPeriod, filterStartDate, filterEndDate); 
             updateTable(tableData);
-            updateChart(kpiData, filterStartDate, filterEndDate); 
+            updateChart(dataForPeriod, filterStartDate, filterEndDate); 
             const totalWaiting = currentData.filter(item => item.status === 'Waiting').length;
             safeSet('kpiWaitingCount', totalWaiting);
         }
@@ -369,7 +378,7 @@
             
             // Un R2 effectué est un R2 planifié qui n'est pas un "No Show"
             const r2Completed = r2Planned - r2NoShow;
-            const r2ToClosedRate = r2Completed > 0 ? (closedCount / r2Completed) * 100 : 0;
+            const r2ToClosedRate = r2Completed > 0 ? (closedCount / r2Completed * 100) : 0;
 
             // Étape 3: Calculer le cash (inchangé)
             let cashCollectedInPeriod = 0;
