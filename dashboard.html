@@ -149,7 +149,7 @@
         <!-- Table Détails -->
         <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 max-h-[60vh] overflow-auto">
              <h2 class="text-xl font-semibold text-gray-300 mb-4 sticky top-0 bg-slate-800/90 py-2 z-20 backdrop-blur-sm">Détails des Prospects</h2>
-             <div class="min-w-[1200px]">
+             <div class="min-w-[1300px]">
                  <table class="w-full divide-y divide-slate-700 table-fixed">
                     <thead class="sticky top-[4.5rem] z-10">
                         <tr>
@@ -160,8 +160,9 @@
                             <th class="w-[10%]">Statut</th>
                             <th class="w-[10%]">Date R2</th>
                             <th class="w-[10%]">Date Relance</th>
-                            <th class="w-[10%] text-right">Montant Total</th>
-                            <th class="w-[18%] text-center">Actions</th>
+                            <th class="w-[8%] text-right">Montant Proposé</th>
+                            <th class="w-[8%] text-right">Montant Total</th>
+                            <th class="w-[14%] text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="detailsTableBody" class="bg-slate-800 divide-y divide-slate-700"></tbody>
@@ -227,6 +228,8 @@
                 </div> 
             </fieldset> 
             
+            <fieldset id="offerDetailsContainer" class="border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Offre Proposée</legend> <div class="pt-2"> <div> <label for="modalProposedAmount" class="block text-sm font-medium text-gray-300 mb-1">Montant Proposé (€)</label> <input type="number" id="modalProposedAmount" placeholder="ex: 3000" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"> </div> </div> </fieldset>
+
             <fieldset id="paymentDetailsContainer" class="hidden border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Détails Paiement</legend> <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"> <div><label for="modalPaymentType" class="block text-sm font-medium text-gray-300 mb-1">Type Paiement</label><select id="modalPaymentType" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="unique">Unique</option><option value="installments">Échelonné</option></select></div> <div><label for="modalAmountCollected" class="block text-sm font-medium text-gray-300 mb-1">Montant Total Contrat (€)</label><input type="number" id="modalAmountCollected" placeholder="ex: 3600" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></div> </div> <div id="installmentsFields" class="installments-fields hidden grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4"> <div><label for="modalInstallmentAmount" class="block text-sm font-medium text-gray-300 mb-1">Montant Échéance (€)</label><input type="number" id="modalInstallmentAmount" placeholder="ex: 720" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> <div><label for="modalNumberOfInstallments" class="block text-sm font-medium text-gray-300 mb-1">Nb Échéances</label><input type="number" id="modalNumberOfInstallments" placeholder="ex: 5" min="1" step="1" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> <div><label for="modalStartDateOfPayment" class="block text-sm font-medium text-gray-300 mb-1">Date 1ère Échéance</label><input type="date" id="modalStartDateOfPayment" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> </div> </fieldset> 
             <div class="flex justify-end space-x-3 pt-4 border-t border-slate-600 mt-6"><button id="modalCancelButton" type="button" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button><button id="modalSaveButton" type="button" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Enregistrer</button></div> <p id="modalError" class="text-red-400 text-sm mt-2 text-center h-4"></p> 
         </div> 
@@ -322,7 +325,7 @@
         async function fetchDataAndDisplay() {
              if (!db || !appId) { displayError("DB non prête."); return; }
              const tableBody = document.getElementById('detailsTableBody');
-             tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
+             tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
              resetKPIs();
              try {
                  const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const querySnapshot = await getDocs(query(collection(db, collectionPath))); currentData = [];
@@ -342,7 +345,7 @@
              } catch (error) { 
                  console.error("Erreur fetch Firestore:", error); 
                  displayError("Erreur chargement données."); 
-                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
+                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
              }
          }
         
@@ -465,9 +468,10 @@
         function updateTable(data) {
              const tB=document.getElementById('detailsTableBody');
              if(!tB) return;
-             if(data.length===0){tB.innerHTML=`<tr><td colspan="9" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
+             if(data.length===0){tB.innerHTML=`<tr><td colspan="10" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
              tB.innerHTML = data.map(i => {
                  const sV = i.status || 'R1 Scheduled'; const sC = getStatusClass(sV);
+                 const pA = Number(i.proposedAmount) || 0;
                  const tA = Number(i.amountCollected) || 0;
                  const qST = (i.qualificationStatus && i.qualificationStatus !== 'N/A') ? i.qualificationStatus.replace(' (Client Rêvé)','').trim() : 'N/A';
                  const qC = qST.includes('VERT')?'text-green-400':(qST.includes('ROUGE')?'text-red-400':'text-gray-400');
@@ -486,6 +490,7 @@
                      <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente')}</span></td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD_R2}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${relaunchDate}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-right">${pA>0?pA.toLocaleString('fr-FR')+'€':'-'}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
                  </tr>`;
@@ -701,6 +706,8 @@
              document.getElementById('modalLostReasonContainer').classList.toggle('hidden', !showReason); 
              document.getElementById('modalRelaunchDateContainer').classList.toggle('hidden', !showRelaunch); 
              
+             document.getElementById('modalProposedAmount').value = pD.proposedAmount || '';
+             
              const pT=pD.paymentType||'unique'; 
              document.getElementById('modalPaymentType').value = pT; 
              document.getElementById('modalAmountCollected').value=pD.amountCollected||''; 
@@ -741,6 +748,7 @@
                      isR1Completed: nS === 'No Show R1' ? false : isR1,
                      isR2Completed: isR2,
                      isClosed: isClosed,
+                     proposedAmount: Number(document.getElementById('modalProposedAmount').value) || 0,
                      // La date et l'heure du R1 ne sont pas incluses dans l'update, elles ne changent donc pas
                      lastUpdatedAt:Timestamp.now()
                  };
@@ -796,7 +804,47 @@
         function openStartR1ConfirmModal(docId, prospectName) { document.getElementById('startR1ProspectName').textContent = prospectName; document.getElementById('startR1DocId').value = docId; document.getElementById('startR1Error').textContent = ''; document.getElementById('startR1ConfirmModal').classList.remove('hidden'); }
         function closeStartR1ConfirmModal() { document.getElementById('startR1ConfirmModal').classList.add('hidden'); }
         async function handleNoShow() { const docId = document.getElementById('startR1DocId').value; const errorP = document.getElementById('startR1Error'); const noShowButton = document.getElementById('noShowButton'); if (!docId || !db) { errorP.textContent = 'Erreur ID/DB'; return; } errorP.textContent = ''; noShowButton.disabled = true; noShowButton.textContent = 'Enregistrement...'; try { const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const docRef = doc(db, collectionPath, docId); await updateDoc(docRef, { status: 'No Show R1', isR1Completed: false, isR2Completed: false, isClosed: false, lastUpdatedAt: Timestamp.now() }); closeStartR1ConfirmModal(); const docIndex = currentData.findIndex(item => item.id === docId); if (docIndex > -1) { currentData[docIndex].status = 'No Show R1'; currentData[docIndex].isR1Completed = false; currentData[docIndex].isR2Completed = false; currentData[docIndex].isClosed = false;} renderFilteredData(); } catch (error) { console.error(`Erreur No Show ${docId}:`, error); errorP.textContent = 'Erreur sauvegarde No Show.'; } finally { noShowButton.disabled = false; noShowButton.textContent = 'Absent (No Show)'; } }
-        function handleStartR1Confirm() { const docId = document.getElementById('startR1DocId').value; if (docId) { window.location.href = `script.html?docId=${docId}`; closeStartR1ConfirmModal(); } else { document.getElementById('startR1Error').textContent = 'Erreur ID manquant.'; } }
+        async function handleStartR1Confirm() {
+            const docId = document.getElementById('startR1DocId').value;
+            const errorP = document.getElementById('startR1Error');
+            const confirmButton = document.getElementById('startR1ConfirmButton');
+
+            if (!docId || !db) {
+                errorP.textContent = 'Erreur: ID ou connexion DB manquante.';
+                return;
+            }
+
+            errorP.textContent = '';
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Démarrage...';
+
+            try {
+                const collectionPath = `artifacts/${appId}/public/data/r1_closings`;
+                const docRef = doc(db, collectionPath, docId);
+
+                // Mettre à jour le statut et cocher la case R1 Effectué
+                await updateDoc(docRef, {
+                    status: 'R1 Completed',
+                    isR1Completed: true, // Coche la case dans le modal de modification
+                    lastUpdatedAt: Timestamp.now()
+                });
+                
+                const docIndex = currentData.findIndex(item => item.id === docId);
+                if (docIndex > -1) {
+                    currentData[docIndex].status = 'R1 Completed';
+                    currentData[docIndex].isR1Completed = true;
+                }
+                
+                window.location.href = `script.html?docId=${docId}`;
+                closeStartR1ConfirmModal();
+
+            } catch (error) {
+                console.error(`Erreur lors du démarrage du R1 ${docId}:`, error);
+                errorP.textContent = 'Erreur lors de la sauvegarde.';
+                confirmButton.disabled = false;
+                confirmButton.textContent = 'Présent (Démarrer)';
+            }
+        }
         function attachListeners() { 
             const tableBody = document.getElementById('detailsTableBody');
             if(tableBody) tableBody.addEventListener('click',(e)=>{ if(e.target.classList.contains('edit-btn')){ openEditModal(e.target.dataset.docId); } else if(e.target.classList.contains('delete-btn')){ openDeleteConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); } else if(e.target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); } }); 
