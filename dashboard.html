@@ -443,7 +443,7 @@
             kpiCards.forEach(id => {
                 const cardEl = document.getElementById(id);
                 if (cardEl) {
-                    if (id === 'kpi-card-r1-completed') { // Actif par défaut
+                    if (id === 'kpi-card-r1-planned') { // Actif par défaut
                         cardEl.classList.add('kpi-chart-active');
                         cardEl.classList.remove('opacity-60');
                     } else {
@@ -520,7 +520,7 @@
                 viewPeriodBtn.classList.add('active');
                 viewWaitingBtn.classList.remove('active');
                 deactiveAllKpiCards(); 
-                const defaultActiveCard = document.getElementById('kpi-card-r1-completed');
+                const defaultActiveCard = document.getElementById('kpi-card-r1-planned');
                 if(defaultActiveCard) {
                     defaultActiveCard.classList.add('kpi-chart-active');
                     defaultActiveCard.classList.remove('opacity-60');
@@ -547,7 +547,7 @@
                 viewPeriodBtn.classList.add('active');
                 viewWaitingBtn.classList.remove('active');
                 deactiveAllKpiCards();
-                const defaultActiveCard = document.getElementById('kpi-card-r1-completed');
+                const defaultActiveCard = document.getElementById('kpi-card-r1-planned');
                 if(defaultActiveCard) {
                     defaultActiveCard.classList.add('kpi-chart-active');
                     defaultActiveCard.classList.remove('opacity-60');
