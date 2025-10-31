@@ -28,6 +28,11 @@
             
             .installments-fields.hidden, .modal.hidden { display: none; }
             input[type="date"]:invalid { border-color: #f87171; }
+            input:read-only {
+                background-color: #374151; /* gray-700 */
+                cursor: not-allowed;
+                opacity: 0.7;
+            }
             
             /* KPI Secondaire (pour Nombres) */
             .kpi-secondary-value { 
@@ -183,8 +188,8 @@
                         <div class="ml-3 text-sm flex-grow">
                             <label for="modalIsR1Completed" class="font-medium text-white">R1 Effectué</label>
                             <div id="modalR1Fields" class="grid grid-cols-2 gap-4 mt-2">
-                                <div><label for="modalProspectDate" class="block text-xs font-medium text-gray-300 mb-1">Date R1</label><input type="date" id="modalProspectDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div>
-                                <div><label for="modalProspectTime" class="block text-sm font-medium text-gray-300 mb-1">Heure R1</label><input type="time" id="modalProspectTime" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div>
+                                <div><label for="modalProspectDate" class="block text-xs font-medium text-gray-300 mb-1">Date R1 (non modifiable)</label><input type="date" id="modalProspectDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div>
+                                <div><label for="modalProspectTime" class="block text-sm font-medium text-gray-300 mb-1">Heure R1 (non modifiable)</label><input type="time" id="modalProspectTime" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div>
                             </div>
                         </div>
                     </div>
@@ -671,8 +676,14 @@
              if(cbR1) cbR1.disabled = false;
              if(cbR2) cbR2.disabled = false;
 
-             document.getElementById('modalProspectDate').value = pD.prospectDate || ''; 
-             document.getElementById('modalProspectTime').value = pD.prospectTime || ''; 
+             const prospectDateInput = document.getElementById('modalProspectDate');
+             const prospectTimeInput = document.getElementById('modalProspectTime');
+
+             prospectDateInput.value = pD.prospectDate || ''; 
+             prospectTimeInput.value = pD.prospectTime || ''; 
+             prospectDateInput.readOnly = true;
+             prospectTimeInput.readOnly = true;
+
              document.getElementById('modalProspectDateR2').value = pD.prospectDateR2 || ''; 
              document.getElementById('modalProspectTimeR2').value = pD.prospectTimeR2 || ''; 
              
@@ -700,7 +711,14 @@
              document.getElementById('modalError').textContent='';
              document.getElementById('editModal').classList.remove('hidden'); 
         }
-        function closeEditModal() { const modal = document.getElementById('editModal'); if(modal) modal.classList.add('hidden'); }
+        function closeEditModal() { 
+            const modal = document.getElementById('editModal'); 
+            if(modal) {
+                document.getElementById('modalProspectDate').readOnly = false;
+                document.getElementById('modalProspectTime').readOnly = false;
+                modal.classList.add('hidden'); 
+            }
+        }
         
         async function saveModalChanges() {
              const dId=document.getElementById('modalDocId').value; 
@@ -710,8 +728,9 @@
              if(!dId || !nS || !mE || !sB) return;
              
              const isR1 = cbR1.checked; const isR2 = cbR2.checked; const isClosed = cbClosed.checked;
-             const newProspectDate = document.getElementById('modalProspectDate').value; 
-             if (!newProspectDate) { mE.textContent = "La date de R1 est requise."; return; }
+             // Date de R1 n'est plus lue depuis le formulaire car non-modifiable
+             const originalProspect = currentData.find(item => item.id === dId);
+             if (!originalProspect || !originalProspect.prospectDate) { mE.textContent = "Erreur: Impossible de trouver la date R1 originale."; return; }
              
              mE.textContent='';sB.disabled=true;sB.textContent='Sauvegarde...';
              
@@ -719,11 +738,10 @@
                  const cP=`artifacts/${appId}/public/data/r1_closings`; const dR=doc(db,cP,dId);
                  const dTU={
                      status:nS, 
-                     isR1Completed: nS === 'No Show R1' ? false : isR1, // Double-check logic
+                     isR1Completed: nS === 'No Show R1' ? false : isR1,
                      isR2Completed: isR2,
                      isClosed: isClosed,
-                     prospectDate: newProspectDate,
-                     prospectTime: document.getElementById('modalProspectTime').value,
+                     // La date et l'heure du R1 ne sont pas incluses dans l'update, elles ne changent donc pas
                      lastUpdatedAt:Timestamp.now()
                  };
                  
@@ -757,11 +775,10 @@
                  
                  const docIndex = currentData.findIndex(item => item.id === dId);
                  if (docIndex > -1) { 
-                     // Fusionner les changements dans les données locales
                      const oldData = currentData[docIndex];
+                     // On fusionne les nouvelles données, mais on s'assure de ne pas écraser la date/heure R1
                      const updatedData = { ...oldData, ...dTU };
 
-                     // Simuler les deleteField pour la mise à jour locale
                      Object.keys(dTU).forEach(key => {
                          if (dTU[key] && typeof dTU[key] === 'object' && dTU[key]._doNotReadJustReturnUndefined === true) {
                              delete updatedData[key];
