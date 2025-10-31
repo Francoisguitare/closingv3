@@ -36,10 +36,10 @@
             
             /* KPI Secondaire (pour Nombres) */
             .kpi-secondary-value { 
-                font-size: 1rem; /* text-base */
+                font-size: 0.875rem; /* text-sm */
                 font-weight: 600; /* font-semibold */
                 color: #9ca3af; /* gray-400 */
-                margin-left: 0.5rem; /* ml-2 */
+                margin-left: 0.25rem; /* ml-1 */
             }
             .kpi-secondary-value.text-red-400 { color: #f87171; }
             .kpi-secondary-value.text-orange-400 { color: #fb923c; }
@@ -48,8 +48,8 @@
             .date-shortcut.active, .view-toggle.active { @apply bg-blue-600 text-white; }
             .date-shortcut:disabled, .view-toggle:disabled { @apply opacity-40 cursor-not-allowed; }
             
-            th { @apply px-4 py-3 bg-slate-700 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
-            td { @apply px-4 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700; }
+            th { @apply px-2 py-3 bg-slate-700 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
+            td { @apply px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700; }
             tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
             tr:last-child td { @apply border-b-0; }
             
@@ -57,7 +57,7 @@
             .kpi-card-toggle { @apply cursor-pointer transition-all duration-200; }
             .kpi-chart-active { @apply ring-2 ring-offset-2 ring-offset-slate-900 ring-white/70; }
             .kpi-card-toggle:not(.kpi-chart-active) { @apply opacity-60 hover:opacity-100; }
-            .kpi-card-static { @apply bg-slate-800/80 backdrop-blur-sm border border-slate-700 p-4 rounded-xl shadow-xl text-center transition-all duration-300 relative overflow-hidden border-t-4; }
+            .kpi-card-static { @apply bg-slate-800/80 backdrop-blur-sm border border-slate-700 p-3 rounded-lg shadow-lg text-center transition-all duration-300 relative overflow-hidden border-t-2; }
         
             /* Case à cocher customisée */
             .custom-checkbox {
@@ -65,6 +65,36 @@
             }
             .custom-checkbox:disabled {
                 @apply opacity-50 cursor-not-allowed;
+            }
+
+            /* Tooltip customisé */
+            .tooltip-container {
+                position: relative;
+                display: inline-block;
+            }
+            .tooltip-container .tooltip-text {
+                visibility: hidden;
+                width: 250px;
+                background-color: #1e293b; /* slate-800 */
+                color: #fff;
+                text-align: left;
+                border-radius: 6px;
+                padding: 8px 12px;
+                position: absolute;
+                z-index: 10;
+                bottom: 125%; /* Position above the element */
+                left: 50%;
+                margin-left: -125px; /* Center the tooltip */
+                opacity: 0;
+                transition: opacity 0.3s;
+                white-space: pre-wrap; /* Respect newlines in the text */
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                border: 1px solid #334155; /* slate-700 */
+                pointer-events: none;
+            }
+            .tooltip-container:hover .tooltip-text {
+                visibility: visible;
+                opacity: 1;
             }
         }
     </style>
@@ -112,24 +142,22 @@
             </div>
         </section>
 
-        <!-- KPIs (Ordre corrigé + Format % modifié) -->
-        <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+        <!-- KPIs -->
+        <section class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
              <!-- Ligne 1: Tunnel R1 -->
-             <div id="kpi-card-r1-planned" class="kpi-card-toggle kpi-card-static border-t-amber-500"><span id="kpiR1Planned" class="text-4xl font-bold text-amber-300 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">R1 Planifiés</span></div>
-             <div id="kpi-card-r1-noshow" class="kpi-card-toggle kpi-card-static border-t-red-500"><div class="flex items-center justify-center"><span id="kpiR1NoShowRate" class="text-4xl font-bold text-red-400 block">0%</span><span id="kpiR1NoShowCount" class="kpi-secondary-value text-red-400 block">(0)</span></div><span class="text-sm text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R1</span></div>
-             <div id="kpi-card-r1-completed" class="kpi-card-toggle kpi-card-static border-t-blue-500"><span id="kpiR1Completed" class="text-4xl font-bold text-blue-300 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">R1 Effectués</span></div>
-             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR1toR2Rate" class="text-4xl font-bold text-teal-300 block">0%</span><span id="kpiR1toR2Count" class="kpi-secondary-value block">(0)</span></div><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Eff → R2</span></div>
+             <div id="kpi-card-r1-planned" class="kpi-card-toggle kpi-card-static border-t-amber-500"><span id="kpiR1Planned" class="text-3xl font-bold text-amber-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R1 Planifiés</span></div>
+             <div id="kpi-card-r1-noshow" class="kpi-card-toggle kpi-card-static border-t-red-500"><div class="flex items-center justify-center"><span id="kpiR1NoShowRate" class="text-3xl font-bold text-red-400 block">0%</span><span id="kpiR1NoShowCount" class="kpi-secondary-value text-red-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R1</span></div>
+             <div id="kpi-card-r1-completed" class="kpi-card-toggle kpi-card-static border-t-blue-500"><span id="kpiR1Completed" class="text-3xl font-bold text-blue-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R1 Effectués</span></div>
+             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR1toR2Rate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1toR2Count" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Eff → R2</span></div>
+             <div id="kpi-card-r2-count" class="kpi-card-toggle kpi-card-static border-t-purple-500"><span id="kpiR2Count" class="text-3xl font-bold text-purple-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R2 Planifiés</span></div>
+             <div id="kpi-card-r2-noshow" class="kpi-card-toggle kpi-card-static border-t-orange-500"><div class="flex items-center justify-center"><span id="kpiR2NoShowRate" class="text-3xl font-bold text-orange-400 block">0%</span><span id="kpiR2NoShowCount" class="kpi-secondary-value !text-orange-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R2</span></div>
              
-             <!-- Ligne 2: Tunnel R2 -->
-             <div id="kpi-card-r2-count" class="kpi-card-toggle kpi-card-static border-t-purple-500"><span id="kpiR2Count" class="text-4xl font-bold text-purple-300 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">R2 Planifiés</span></div>
-             <div id="kpi-card-r2-noshow" class="kpi-card-toggle kpi-card-static border-t-orange-500"><div class="flex items-center justify-center"><span id="kpiR2NoShowRate" class="text-4xl font-bold text-orange-400 block">0%</span><span id="kpiR2NoShowCount" class="kpi-secondary-value !text-orange-400 block">(0)</span></div><span class="text-sm text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R2</span></div>
-             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR2toClosedRate" class="text-4xl font-bold text-teal-300 block">0%</span><span id="kpiR2toClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Conv. R2 Eff → Closé</span></div>
-             <div id="kpi-card-closing" class="kpi-card-toggle kpi-card-static border-t-green-500"><span id="kpiClosingCount" class="text-4xl font-bold text-green-300 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Closings</span></div>
-             
-             <!-- Ligne 3: Cash & Statut Annexe -->
-             <div id="kpi-card-cash" class="kpi-card-toggle kpi-card-static border-t-teal-500"><span id="kpiCashCollected" class="text-4xl font-bold text-teal-300 block mb-1">0€</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Cash Période</span></div>
-             <div id="kpi-card-cash-future" class="kpi-card-static border-t-teal-500"><span id="kpiCashFutureRecurring" class="text-4xl font-bold text-teal-300 block mb-1">0€</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Cash Récurrent Futur</span></div>
-             <div id="kpi-card-waiting" class="kpi-card-static border-t-blue-400"><span id="kpiWaitingCount" class="text-4xl font-bold text-blue-400 block mb-1">0</span><span class="text-sm text-gray-400 font-medium uppercase tracking-wider">Total "En Attente"</span></div>
+             <!-- Ligne 2: Tunnel R2 & Cash -->
+             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR2toClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR2toClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R2 Eff → Closé</span></div>
+             <div id="kpi-card-closing" class="kpi-card-toggle kpi-card-static border-t-green-500"><span id="kpiClosingCount" class="text-3xl font-bold text-green-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Closings</span></div>
+             <div id="kpi-card-cash" class="kpi-card-toggle kpi-card-static border-t-teal-500"><span id="kpiCashCollected" class="text-3xl font-bold text-teal-300 block mb-1">0€</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cash Période</span></div>
+             <div id="kpi-card-cash-future" class="kpi-card-static border-t-teal-500"><span id="kpiCashFutureRecurring" class="text-3xl font-bold text-teal-300 block mb-1">0€</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cash Récurrent Futur</span></div>
+             <div id="kpi-card-waiting" class="kpi-card-static border-t-blue-400"><span id="kpiWaitingCount" class="text-3xl font-bold text-blue-400 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Total "En Attente"</span></div>
         </section>
 
         <!-- Graphique -->
@@ -147,27 +175,25 @@
         </section>
 
         <!-- Table Détails -->
-        <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 max-h-[60vh] overflow-auto">
+        <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 overflow-x-auto">
              <h2 class="text-xl font-semibold text-gray-300 mb-4 sticky top-0 bg-slate-800/90 py-2 z-20 backdrop-blur-sm">Détails des Prospects</h2>
-             <div class="min-w-[1300px]">
-                 <table class="w-full divide-y divide-slate-700 table-fixed">
-                    <thead class="sticky top-[4.5rem] z-10">
-                        <tr>
-                            <th class="w-[10%]">Date R1</th>
-                            <th class="w-[15%]">Prospect</th>
-                            <th class="w-[10%]">Statut Qualif.</th>
-                            <th class="w-[5%] text-center">Score</th>
-                            <th class="w-[10%]">Statut</th>
-                            <th class="w-[10%]">Date R2</th>
-                            <th class="w-[10%]">Date Relance</th>
-                            <th class="w-[8%] text-left">Offre Proposée</th>
-                            <th class="w-[8%] text-right">Montant Total</th>
-                            <th class="w-[14%] text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="detailsTableBody" class="bg-slate-800 divide-y divide-slate-700"></tbody>
-                </table>
-             </div>
+             <table class="w-full divide-y divide-slate-700 table-fixed">
+                <thead class="sticky top-[4.5rem] z-10">
+                    <tr>
+                        <th class="w-[10%]">Date R1</th>
+                        <th class="w-[16%]">Prospect</th>
+                        <th class="w-[10%]">Statut Qualif.</th>
+                        <th class="w-[5%] text-center">Score</th>
+                        <th class="w-[10%]">Statut</th>
+                        <th class="w-[10%]">Date R2</th>
+                        <th class="w-[10%]">Date Relance</th>
+                        <th class="w-[7%] text-left">Offre Proposée</th>
+                        <th class="w-[8%] text-right">Montant Total</th>
+                        <th class="w-[14%] text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="detailsTableBody" class="bg-slate-800 divide-y divide-slate-700"></tbody>
+            </table>
         </section>
     </div>
 
@@ -472,9 +498,14 @@
              tB.innerHTML = data.map(i => {
                  const sV = i.status || 'R1 Scheduled'; const sC = getStatusClass(sV);
                  const pA_text = i.proposedAmount || '';
-                 const pA_title = pA_text ? `title="${pA_text.replace(/"/g, '&quot;')}"` : '';
-                 const pA_display = pA_text ? 'Voir offre' : '-';
-                 const pA_class = pA_text ? 'text-sky-400 cursor-help' : 'text-gray-400';
+                 let pA_display;
+                 if (pA_text) {
+                     const escaped_text = pA_text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                     pA_display = `<span class="tooltip-container text-sky-400 cursor-help">Voir offre<span class="tooltip-text">${escaped_text}</span></span>`;
+                 } else {
+                     pA_display = '<span class="text-gray-400">-</span>';
+                 }
+
                  const tA = Number(i.amountCollected) || 0;
                  const qST = (i.qualificationStatus && i.qualificationStatus !== 'N/A') ? i.qualificationStatus.replace(' (Client Rêvé)','').trim() : 'N/A';
                  const qC = qST.includes('VERT')?'text-green-400':(qST.includes('ROUGE')?'text-red-400':'text-gray-400');
@@ -493,7 +524,7 @@
                      <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente')}</span></td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD_R2}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${relaunchDate}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-left ${pA_class}" ${pA_title}>${pA_display}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-left">${pA_display}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
                  </tr>`;
