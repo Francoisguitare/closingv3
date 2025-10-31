@@ -160,7 +160,7 @@
                             <th class="w-[10%]">Statut</th>
                             <th class="w-[10%]">Date R2</th>
                             <th class="w-[10%]">Date Relance</th>
-                            <th class="w-[8%] text-right">Montant Proposé</th>
+                            <th class="w-[8%] text-left">Offre Proposée</th>
                             <th class="w-[8%] text-right">Montant Total</th>
                             <th class="w-[14%] text-center">Actions</th>
                         </tr>
@@ -228,7 +228,7 @@
                 </div> 
             </fieldset> 
             
-            <fieldset id="offerDetailsContainer" class="border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Offre Proposée</legend> <div class="pt-2"> <div> <label for="modalProposedAmount" class="block text-sm font-medium text-gray-300 mb-1">Montant Proposé (€)</label> <input type="number" id="modalProposedAmount" placeholder="ex: 3000" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"> </div> </div> </fieldset>
+            <fieldset id="offerDetailsContainer" class="border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Offre Proposée</legend> <div class="pt-2"> <div> <label for="modalProposedAmount" class="block text-sm font-medium text-gray-300 mb-1">Détails de l'offre / Montant proposé</label> <textarea id="modalProposedAmount" placeholder="Ex: 3000€ paiement unique, ou offre spéciale avec arrangement..." rows="3" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></textarea> </div> </div> </fieldset>
 
             <fieldset id="paymentDetailsContainer" class="hidden border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Détails Paiement</legend> <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"> <div><label for="modalPaymentType" class="block text-sm font-medium text-gray-300 mb-1">Type Paiement</label><select id="modalPaymentType" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="unique">Unique</option><option value="installments">Échelonné</option></select></div> <div><label for="modalAmountCollected" class="block text-sm font-medium text-gray-300 mb-1">Montant Total Contrat (€)</label><input type="number" id="modalAmountCollected" placeholder="ex: 3600" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></div> </div> <div id="installmentsFields" class="installments-fields hidden grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4"> <div><label for="modalInstallmentAmount" class="block text-sm font-medium text-gray-300 mb-1">Montant Échéance (€)</label><input type="number" id="modalInstallmentAmount" placeholder="ex: 720" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> <div><label for="modalNumberOfInstallments" class="block text-sm font-medium text-gray-300 mb-1">Nb Échéances</label><input type="number" id="modalNumberOfInstallments" placeholder="ex: 5" min="1" step="1" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> <div><label for="modalStartDateOfPayment" class="block text-sm font-medium text-gray-300 mb-1">Date 1ère Échéance</label><input type="date" id="modalStartDateOfPayment" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> </div> </fieldset> 
             <div class="flex justify-end space-x-3 pt-4 border-t border-slate-600 mt-6"><button id="modalCancelButton" type="button" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button><button id="modalSaveButton" type="button" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Enregistrer</button></div> <p id="modalError" class="text-red-400 text-sm mt-2 text-center h-4"></p> 
@@ -471,7 +471,10 @@
              if(data.length===0){tB.innerHTML=`<tr><td colspan="10" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
              tB.innerHTML = data.map(i => {
                  const sV = i.status || 'R1 Scheduled'; const sC = getStatusClass(sV);
-                 const pA = Number(i.proposedAmount) || 0;
+                 const pA_text = i.proposedAmount || '';
+                 const pA_title = pA_text ? `title="${pA_text.replace(/"/g, '&quot;')}"` : '';
+                 const pA_display = pA_text ? 'Voir offre' : '-';
+                 const pA_class = pA_text ? 'text-sky-400 cursor-help' : 'text-gray-400';
                  const tA = Number(i.amountCollected) || 0;
                  const qST = (i.qualificationStatus && i.qualificationStatus !== 'N/A') ? i.qualificationStatus.replace(' (Client Rêvé)','').trim() : 'N/A';
                  const qC = qST.includes('VERT')?'text-green-400':(qST.includes('ROUGE')?'text-red-400':'text-gray-400');
@@ -490,7 +493,7 @@
                      <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente')}</span></td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD_R2}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${relaunchDate}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-right">${pA>0?pA.toLocaleString('fr-FR')+'€':'-'}</td>
+                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-left ${pA_class}" ${pA_title}>${pA_display}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
                      <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
                  </tr>`;
@@ -748,7 +751,7 @@
                      isR1Completed: nS === 'No Show R1' ? false : isR1,
                      isR2Completed: isR2,
                      isClosed: isClosed,
-                     proposedAmount: Number(document.getElementById('modalProposedAmount').value) || 0,
+                     proposedAmount: document.getElementById('modalProposedAmount').value.trim(),
                      // La date et l'heure du R1 ne sont pas incluses dans l'update, elles ne changent donc pas
                      lastUpdatedAt:Timestamp.now()
                  };
