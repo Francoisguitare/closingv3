@@ -233,7 +233,7 @@
             try {
                 // Fetch FOMO offers
                 const fomoCollectionPath = `artifacts/${appId}/public/data/fomo_offers`;
-                const fomoQuery = query(collection(db, fomoCollectionPath), orderBy("offerDate", "desc"));
+                const fomoQuery = query(collection(db, fomoCollectionPath), orderBy("createdAt", "desc"));
                 const fomoSnapshot = await getDocs(fomoQuery);
                 currentFomoData = fomoSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderTable();
