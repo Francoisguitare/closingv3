@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi Offres FOMO - GIA Closing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+        @layer base {
+            body { font-family: 'Inter', sans-serif; }
+        }
+        @layer components {
+            .status-propose { background-color: #60a5fa; color: #1e3a8a; } /* Blue */
+            .status-accepte { background-color: #16a34a; color: #dcfce7; } /* Green */
+            .status-refuse { background-color: #dc2626; color: #fee2e2; } /* Red */
+            .status-attente { background-color: #fbbf24; color: #78350f; } /* Amber */
+            
+            .modal.hidden { display: none; }
+            th { @apply px-4 py-3 bg-slate-700 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
+            td { @apply px-4 py-4 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700; }
+            tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+            tr:last-child td { @apply border-b-0; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-gray-900 to-slate-900 text-white min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-4">
+            <h1 class="text-3xl font-bold text-purple-300 mb-4 md:mb-0">Suivi Offres Exceptionnelles (FOMO)</h1>
+            <a href="dashboard.html" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-5 rounded-lg transition-all duration-300 shadow-lg shadow-indigo-800/40">&larr; Retour Dashboard</a>
+        </header>
+
+        <!-- Formulaire de saisie manuelle -->
+        <section class="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+            <h2 id="formTitle" class="text-xl font-semibold text-gray-300 mb-4">Ajouter un Prospect</h2>
+            <form id="fomoForm" class="space-y-4">
+                <input type="hidden" id="docId">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="prospectName" class="block text-sm font-medium text-gray-300 mb-1">Nom du Prospect</label>
+                        <input type="text" id="prospectName" required class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Jean Dupont">
+                    </div>
+                    <div>
+                        <label for="offerDate" class="block text-sm font-medium text-gray-300 mb-1">Date de l'Offre</label>
+                        <input type="date" id="offerDate" required class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="finalAmount" class="block text-sm font-medium text-gray-300 mb-1">Montant Final Proposé (€)</label>
+                        <input type="number" id="finalAmount" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="2600">
+                    </div>
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-300 mb-1">Statut</label>
+                        <select id="status" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400">
+                            <option value="Proposé">Proposé</option>
+                            <option value="En attente de réponse">En attente de réponse</option>
+                            <option value="Accepté">Accepté</option>
+                            <option value="Refusé">Refusé</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-300 mb-1">Notes</label>
+                    <textarea id="notes" rows="3" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Ex: Doit voir avec sa femme, rappel le JJ/MM..."></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button id="cancelEditButton" type="button" class="hidden bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button>
+                    <button id="saveButton" type="submit" class="bg-purple-600 hover:bg-purple-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-wait">Ajouter au Suivi</button>
+                </div>
+                <p id="formError" class="text-red-400 text-sm mt-2 text-center h-4"></p>
+            </form>
+        </section>
+
+        <!-- Table de suivi -->
+        <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 overflow-x-auto">
+             <h2 class="text-xl font-semibold text-gray-300 mb-4">Prospects Suivis</h2>
+             <table class="w-full divide-y divide-slate-700">
+                <thead>
+                    <tr>
+                        <th class="w-[25%]">Prospect</th>
+                        <th class="w-[15%]">Date Offre</th>
+                        <th class="w-[15%] text-right">Montant Final</th>
+                        <th class="w-[15%]">Statut</th>
+                        <th class="w-[20%]">Notes</th>
+                        <th class="w-[10%] text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fomoTableBody" class="bg-slate-800 divide-y divide-slate-700">
+                    <!-- Les lignes seront injectées par JS -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- Modal de Confirmation de Suppression -->
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm border border-slate-700 space-y-4">
+            <h2 class="text-lg font-semibold text-amber-300">Confirmer la Suppression</h2>
+            <p class="text-gray-300 text-sm my-3">Voulez-vous vraiment supprimer le suivi pour "<span id="deleteProspectName" class="font-bold"></span>" ? Cette action est irréversible.</p>
+            <input type="hidden" id="deleteDocId">
+            <div class="flex justify-end space-x-3 pt-4">
+                <button id="deleteCancelButton" type="button" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button>
+                <button id="deleteConfirmButton" type="button" class="bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Supprimer</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        let db, auth, appId;
+        let currentData = [];
+
+        async function initFirebase() {
+            try {
+                const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" };
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const app = initializeApp(fC);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                return new Promise((resolve) => {
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) { resolve(); }
+                        else { try { await signInAnonymously(auth); resolve(); } catch (e){ console.error("Err anon:", e); resolve(); } }
+                    });
+                });
+            } catch (error) {
+                console.error("Erreur init Firebase:", error);
+                document.getElementById('formError').textContent = "Erreur de connexion à la base de données.";
+                return Promise.reject(error);
+            }
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'Proposé': return 'status-propose';
+                case 'Accepté': return 'status-accepte';
+                case 'Refusé': return 'status-refuse';
+                case 'En attente de réponse': return 'status-attente';
+                default: return 'status-other';
+            }
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('fomoTableBody');
+            if (!tableBody) return;
+            if (currentData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-400">Aucun prospect dans le suivi pour le moment.</td></tr>`;
+                return;
+            }
+            tableBody.innerHTML = currentData.map(item => {
+                const statusClass = getStatusClass(item.status);
+                const escapedName = item.prospectName.replace(/"/g, '&quot;');
+                const notesDisplay = item.notes ? item.notes.substring(0, 50) + (item.notes.length > 50 ? '...' : '') : '-';
+                const amountDisplay = item.finalAmount ? `${Number(item.finalAmount).toLocaleString('fr-FR')}€` : '-';
+                return `
+                    <tr>
+                        <td>${item.prospectName}</td>
+                        <td>${item.offerDate}</td>
+                        <td class="text-right">${amountDisplay}</td>
+                        <td><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${item.status}</span></td>
+                        <td class="text-gray-400">${notesDisplay}</td>
+                        <td class="text-center space-x-2">
+                            <button data-doc-id="${item.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium">Modifier</button>
+                            <button data-doc-id="${item.id}" data-prospect-name="${escapedName}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium">Suppr.</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function fetchData() {
+            if (!db || !appId) return;
+            const tableBody = document.getElementById('fomoTableBody');
+            tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
+            try {
+                const collectionPath = `artifacts/${appId}/public/data/fomo_offers`;
+                const q = query(collection(db, collectionPath), orderBy("offerDate", "desc"));
+                const querySnapshot = await getDocs(q);
+                currentData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderTable();
+            } catch (error) {
+                console.error("Erreur fetch Firestore:", error);
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-400">Erreur de chargement des données.</td></tr>`;
+            }
+        }
+        
+        function resetForm() {
+            const form = document.getElementById('fomoForm');
+            form.reset();
+            document.getElementById('docId').value = '';
+            document.getElementById('formTitle').textContent = 'Ajouter un Prospect';
+            document.getElementById('saveButton').textContent = 'Ajouter au Suivi';
+            document.getElementById('cancelEditButton').classList.add('hidden');
+        }
+
+        function handleEditClick(docId) {
+            const prospect = currentData.find(item => item.id === docId);
+            if (!prospect) return;
+            
+            document.getElementById('docId').value = prospect.id;
+            document.getElementById('prospectName').value = prospect.prospectName;
+            document.getElementById('offerDate').value = prospect.offerDate;
+            document.getElementById('finalAmount').value = prospect.finalAmount || '';
+            document.getElementById('status').value = prospect.status;
+            document.getElementById('notes').value = prospect.notes || '';
+
+            document.getElementById('formTitle').textContent = 'Modifier un Prospect';
+            document.getElementById('saveButton').textContent = 'Enregistrer les Modifications';
+            document.getElementById('cancelEditButton').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openDeleteModal(docId, prospectName) {
+            document.getElementById('deleteProspectName').textContent = prospectName;
+            document.getElementById('deleteDocId').value = docId;
+            document.getElementById('deleteConfirmModal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteConfirmModal').classList.add('hidden');
+        }
+        
+        async function confirmDelete() {
+            const docId = document.getElementById('deleteDocId').value;
+            const deleteButton = document.getElementById('deleteConfirmButton');
+            if (!docId) return;
+            
+            deleteButton.disabled = true;
+            deleteButton.textContent = 'Suppression...';
+            try {
+                const collectionPath = `artifacts/${appId}/public/data/fomo_offers`;
+                await deleteDoc(doc(db, collectionPath, docId));
+                closeDeleteModal();
+                fetchData();
+            } catch(error) {
+                console.error("Erreur de suppression:", error);
+                alert("Une erreur est survenue lors de la suppression.");
+            } finally {
+                deleteButton.disabled = false;
+                deleteButton.textContent = 'Supprimer';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initFirebase();
+            await fetchData();
+
+            const form = document.getElementById('fomoForm');
+            const saveButton = document.getElementById('saveButton');
+            const cancelEditButton = document.getElementById('cancelEditButton');
+            const tableBody = document.getElementById('fomoTableBody');
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                saveButton.disabled = true;
+                const docId = document.getElementById('docId').value;
+                const data = {
+                    prospectName: document.getElementById('prospectName').value,
+                    offerDate: document.getElementById('offerDate').value,
+                    finalAmount: Number(document.getElementById('finalAmount').value) || null,
+                    status: document.getElementById('status').value,
+                    notes: document.getElementById('notes').value.trim(),
+                    updatedAt: Timestamp.now()
+                };
+
+                try {
+                    const collectionPath = `artifacts/${appId}/public/data/fomo_offers`;
+                    if (docId) { // Update
+                        await updateDoc(doc(db, collectionPath, docId), data);
+                    } else { // Create
+                        data.createdAt = Timestamp.now();
+                        await addDoc(collection(db, collectionPath), data);
+                    }
+                    resetForm();
+                    fetchData();
+                } catch (error) {
+                    console.error("Erreur sauvegarde:", error);
+                    document.getElementById('formError').textContent = "Erreur lors de la sauvegarde.";
+                } finally {
+                    saveButton.disabled = false;
+                }
+            });
+            
+            cancelEditButton.addEventListener('click', resetForm);
+
+            tableBody.addEventListener('click', (e) => {
+                if (e.target.classList.contains('edit-btn')) {
+                    handleEditClick(e.target.dataset.docId);
+                }
+                if (e.target.classList.contains('delete-btn')) {
+                    openDeleteModal(e.target.dataset.docId, e.target.dataset.prospectName);
+                }
+            });
+            
+            // Delete Modal Listeners
+            document.getElementById('deleteCancelButton').addEventListener('click', closeDeleteModal);
+            document.getElementById('deleteConfirmButton').addEventListener('click', confirmDelete);
+            document.getElementById('deleteConfirmModal').addEventListener('click', (e) => { if(e.target.id === 'deleteConfirmModal') closeDeleteModal(); });
+        });
+    </script>
+</body>
+</html>
