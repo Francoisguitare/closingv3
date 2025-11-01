@@ -23,6 +23,45 @@
             td { @apply px-4 py-4 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700; }
             tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
             tr:last-child td { @apply border-b-0; }
+
+            /* Tooltip customisé */
+            .tooltip-container { position: relative; display: inline-block; }
+            .tooltip-container .tooltip-text {
+                visibility: hidden;
+                width: 250px;
+                background-color: #1e293b; /* slate-800 */
+                color: #fff;
+                text-align: left;
+                border-radius: 6px;
+                padding: 8px 12px;
+                position: absolute;
+                z-index: 10;
+                bottom: 125%;
+                left: 50%;
+                margin-left: -125px;
+                opacity: 0;
+                transition: opacity 0.3s;
+                white-space: pre-wrap;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                border: 1px solid #334155; /* slate-700 */
+                pointer-events: none;
+            }
+            .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+            /* Suggestions Prospects */
+            #prospectSuggestions {
+                @apply absolute w-full max-h-60 overflow-y-auto bg-slate-700 border border-slate-600 rounded-b-lg shadow-lg z-20;
+            }
+            .suggestion-item {
+                @apply p-3 cursor-pointer hover:bg-slate-600 border-b border-slate-600/50;
+            }
+            .suggestion-item:last-child { @apply border-b-0; }
+            .suggestion-name { @apply font-semibold text-white; }
+            .suggestion-details { @apply text-xs text-gray-400 mt-1 flex flex-wrap gap-x-3; }
+            .suggestion-status { @apply px-1.5 py-0.5 text-xs font-bold rounded-full; }
+            .status-vert { @apply bg-green-500 text-green-900; }
+            .status-rouge { @apply bg-red-500 text-red-900; }
+            .status-autre { @apply bg-gray-500 text-gray-900; }
         }
     </style>
 </head>
@@ -41,9 +80,10 @@
             <form id="fomoForm" class="space-y-4">
                 <input type="hidden" id="docId">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div class="relative">
                         <label for="prospectName" class="block text-sm font-medium text-gray-300 mb-1">Nom du Prospect</label>
-                        <input type="text" id="prospectName" required class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Jean Dupont">
+                        <input type="text" id="prospectName" required class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Jean Dupont" autocomplete="off">
+                        <div id="prospectSuggestions" class="hidden"></div>
                     </div>
                     <div>
                         <label for="offerDate" class="block text-sm font-medium text-gray-300 mb-1">Date de l'Offre</label>
@@ -114,11 +154,12 @@
     <!-- Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         let db, auth, appId;
-        let currentData = [];
+        let currentFomoData = [];
+        let allProspectsData = [];
 
         async function initFirebase() {
             try {
@@ -153,14 +194,21 @@
         function renderTable() {
             const tableBody = document.getElementById('fomoTableBody');
             if (!tableBody) return;
-            if (currentData.length === 0) {
+            if (currentFomoData.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-400">Aucun prospect dans le suivi pour le moment.</td></tr>`;
                 return;
             }
-            tableBody.innerHTML = currentData.map(item => {
+            tableBody.innerHTML = currentFomoData.map(item => {
                 const statusClass = getStatusClass(item.status);
                 const escapedName = item.prospectName.replace(/"/g, '&quot;');
-                const notesDisplay = item.notes ? item.notes.substring(0, 50) + (item.notes.length > 50 ? '...' : '') : '-';
+                const notesTruncated = item.notes ? item.notes.substring(0, 50) + (item.notes.length > 50 ? '...' : '') : '-';
+                let notesDisplay;
+                if (item.notes) {
+                    const escapedNotes = item.notes.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    notesDisplay = `<span class="tooltip-container text-gray-400 cursor-help">${notesTruncated}<span class="tooltip-text">${escapedNotes}</span></span>`;
+                } else {
+                    notesDisplay = '<span class="text-gray-400">-</span>';
+                }
                 const amountDisplay = item.finalAmount ? `${Number(item.finalAmount).toLocaleString('fr-FR')}€` : '-';
                 return `
                     <tr>
@@ -168,7 +216,7 @@
                         <td>${item.offerDate}</td>
                         <td class="text-right">${amountDisplay}</td>
                         <td><span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${item.status}</span></td>
-                        <td class="text-gray-400">${notesDisplay}</td>
+                        <td>${notesDisplay}</td>
                         <td class="text-center space-x-2">
                             <button data-doc-id="${item.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium">Modifier</button>
                             <button data-doc-id="${item.id}" data-prospect-name="${escapedName}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium">Suppr.</button>
@@ -178,16 +226,24 @@
             }).join('');
         }
 
-        async function fetchData() {
+        async function fetchAllData() {
             if (!db || !appId) return;
             const tableBody = document.getElementById('fomoTableBody');
             tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
             try {
-                const collectionPath = `artifacts/${appId}/public/data/fomo_offers`;
-                const q = query(collection(db, collectionPath), orderBy("offerDate", "desc"));
-                const querySnapshot = await getDocs(q);
-                currentData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Fetch FOMO offers
+                const fomoCollectionPath = `artifacts/${appId}/public/data/fomo_offers`;
+                const fomoQuery = query(collection(db, fomoCollectionPath), orderBy("offerDate", "desc"));
+                const fomoSnapshot = await getDocs(fomoQuery);
+                currentFomoData = fomoSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderTable();
+
+                // Fetch all prospects for suggestions
+                const prospectsCollectionPath = `artifacts/${appId}/public/data/r1_closings`;
+                const prospectsQuery = query(collection(db, prospectsCollectionPath), orderBy("savedAt", "desc"));
+                const prospectsSnapshot = await getDocs(prospectsQuery);
+                allProspectsData = prospectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
             } catch (error) {
                 console.error("Erreur fetch Firestore:", error);
                 tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-400">Erreur de chargement des données.</td></tr>`;
@@ -204,7 +260,7 @@
         }
 
         function handleEditClick(docId) {
-            const prospect = currentData.find(item => item.id === docId);
+            const prospect = currentFomoData.find(item => item.id === docId);
             if (!prospect) return;
             
             document.getElementById('docId').value = prospect.id;
@@ -241,7 +297,7 @@
                 const collectionPath = `artifacts/${appId}/public/data/fomo_offers`;
                 await deleteDoc(doc(db, collectionPath, docId));
                 closeDeleteModal();
-                fetchData();
+                fetchAllData(); // Refetch data
             } catch(error) {
                 console.error("Erreur de suppression:", error);
                 alert("Une erreur est survenue lors de la suppression.");
@@ -251,21 +307,66 @@
             }
         }
 
+        function renderProspectSuggestions(filter = '') {
+            const suggestionsContainer = document.getElementById('prospectSuggestions');
+            if (!suggestionsContainer) return;
+            
+            const lowercasedFilter = filter.toLowerCase();
+            const filteredProspects = allProspectsData
+                .filter(p => p.prospectName.toLowerCase().includes(lowercasedFilter))
+                .slice(0, 10); // Show max 10 suggestions
+
+            if (filteredProspects.length === 0) {
+                suggestionsContainer.classList.add('hidden');
+                return;
+            }
+
+            suggestionsContainer.innerHTML = filteredProspects.map(p => {
+                const status = p.qualificationStatus || 'N/A';
+                let statusClass = 'status-autre';
+                if (status.includes('VERT')) statusClass = 'status-vert';
+                if (status.includes('ROUGE')) statusClass = 'status-rouge';
+                const statusText = status.replace(' (Client Rêvé)', '').trim();
+
+                const proposedAmount = p.proposedAmount ? p.proposedAmount.match(/\d+/) : null;
+                const amount = proposedAmount ? proposedAmount[0] : (p.amountCollected || 'N/A');
+                const amountText = !isNaN(Number(amount)) ? `${Number(amount).toLocaleString('fr-FR')}€` : '-';
+                const score = p.scores?.total ?? 'N/A';
+
+                return `
+                    <div class="suggestion-item" data-name="${p.prospectName.replace(/"/g, '&quot;')}" data-amount="${amount}">
+                        <div class="flex justify-between items-center">
+                            <span class="suggestion-name">${p.prospectName}</span>
+                            <span class="suggestion-status ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="suggestion-details">
+                            <span>Score: <strong>${score}</strong></span>
+                            <span>Date: <strong>${p.prospectDate}</strong></span>
+                            <span>Offre: <strong>${amountText}</strong></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            suggestionsContainer.classList.remove('hidden');
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             await initFirebase();
-            await fetchData();
+            await fetchAllData();
 
             const form = document.getElementById('fomoForm');
             const saveButton = document.getElementById('saveButton');
             const cancelEditButton = document.getElementById('cancelEditButton');
             const tableBody = document.getElementById('fomoTableBody');
+            const prospectNameInput = document.getElementById('prospectName');
+            const suggestionsContainer = document.getElementById('prospectSuggestions');
             
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 saveButton.disabled = true;
                 const docId = document.getElementById('docId').value;
                 const data = {
-                    prospectName: document.getElementById('prospectName').value,
+                    prospectName: prospectNameInput.value,
                     offerDate: document.getElementById('offerDate').value,
                     finalAmount: Number(document.getElementById('finalAmount').value) || null,
                     status: document.getElementById('status').value,
@@ -282,7 +383,7 @@
                         await addDoc(collection(db, collectionPath), data);
                     }
                     resetForm();
-                    fetchData();
+                    fetchAllData();
                 } catch (error) {
                     console.error("Erreur sauvegarde:", error);
                     document.getElementById('formError').textContent = "Erreur lors de la sauvegarde.";
@@ -306,6 +407,28 @@
             document.getElementById('deleteCancelButton').addEventListener('click', closeDeleteModal);
             document.getElementById('deleteConfirmButton').addEventListener('click', confirmDelete);
             document.getElementById('deleteConfirmModal').addEventListener('click', (e) => { if(e.target.id === 'deleteConfirmModal') closeDeleteModal(); });
+        
+            // Suggestions Logic
+            prospectNameInput.addEventListener('focus', () => renderProspectSuggestions(prospectNameInput.value));
+            prospectNameInput.addEventListener('input', () => renderProspectSuggestions(prospectNameInput.value));
+            
+            suggestionsContainer.addEventListener('mousedown', (e) => {
+                const item = e.target.closest('.suggestion-item');
+                if (item) {
+                    prospectNameInput.value = item.dataset.name;
+                    const amount = item.dataset.amount;
+                    if (amount && amount !== 'N/A') {
+                        document.getElementById('finalAmount').value = amount;
+                    }
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!prospectNameInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
         });
     </script>
 </body>
