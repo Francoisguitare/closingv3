@@ -159,6 +159,7 @@
              <div id="kpi-card-r2-noshow" class="kpi-card-toggle kpi-card-static border-t-orange-500"><div class="flex items-center justify-center"><span id="kpiR2NoShowRate" class="text-3xl font-bold text-orange-400 block">0%</span><span id="kpiR2NoShowCount" class="kpi-secondary-value !text-orange-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R2</span></div>
              
              <!-- Ligne 2: Tunnel R2 & Cash -->
+             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR1PlanToClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1PlanToClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Plan → Closé</span></div>
              <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR2toClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR2toClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R2 Eff → Closé</span></div>
              <div id="kpi-card-closing" class="kpi-card-toggle kpi-card-static border-t-green-500"><span id="kpiClosingCount" class="text-3xl font-bold text-green-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Closings</span></div>
              <div id="kpi-card-cash" class="kpi-card-toggle kpi-card-static border-t-teal-500"><span id="kpiCashCollected" class="text-3xl font-bold text-teal-300 block mb-1">0€</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cash Période</span></div>
@@ -419,6 +420,7 @@
             // Un R2 effectué est un R2 planifié qui n'est pas un "No Show"
             const r2Completed = r2Planned - r2NoShow;
             const r2ToClosedRate = r2Completed > 0 ? (closedCount / r2Completed * 100) : 0;
+            const r1PlanToClosedRate = r1Planned > 0 ? (closedCount / r1Planned * 100) : 0;
 
             // Étape 3: Calculer le cash (inchangé)
             let cashCollectedInPeriod = 0;
@@ -438,6 +440,8 @@
             safeSet('kpiR1toR2Count', `(${r2Planned})`);
             safeSet('kpiR2toClosedRate', `${r2ToClosedRate.toFixed(1)}%`);
             safeSet('kpiR2toClosedCount', `(${closedCount})`);
+            safeSet('kpiR1PlanToClosedRate', `${r1PlanToClosedRate.toFixed(1)}%`);
+            safeSet('kpiR1PlanToClosedCount', `(${closedCount})`);
             safeSet('kpiCashCollected', `${cashCollectedInPeriod.toLocaleString('fr-FR')}€`);
             safeSet('kpiCashFutureRecurring', `${cashFutureRecurring.toLocaleString('fr-FR')}€`);
         }
@@ -540,12 +544,13 @@
         function getStatusClass(status) { switch(status){ case 'R1 Scheduled': return 'status-scheduled'; case 'Waiting': return 'status-waiting'; case 'No Show R1': return 'status-noshow-r1'; case 'No Show R2': return 'status-noshow-r2'; case 'R1 Completed':return 'status-r1';case 'R2 Scheduled':return 'status-r2';case 'Closed':return 'status-closed';case 'Lost':return 'status-lost';default:return 'status-other';} }
         
         function resetKPIs() {
-            const kpiIds = ['kpiR1Planned', 'kpiR1NoShowCount', 'kpiR1Completed', 'kpiR2Count', 'kpiR2NoShowCount', 'kpiClosingCount', 'kpiR1toR2Count', 'kpiR2toClosedCount'];
+            const kpiIds = ['kpiR1Planned', 'kpiR1NoShowCount', 'kpiR1Completed', 'kpiR2Count', 'kpiR2NoShowCount', 'kpiClosingCount', 'kpiR1toR2Count', 'kpiR2toClosedCount', 'kpiR1PlanToClosedCount'];
             kpiIds.forEach(id => safeSet(id, id.includes('Count') ? '(0)' : '0'));
             safeSet('kpiR1NoShowRate', '0%');
             safeSet('kpiR2NoShowRate', '0%');
             safeSet('kpiR1toR2Rate', '0%'); 
             safeSet('kpiR2toClosedRate', '0%');
+            safeSet('kpiR1PlanToClosedRate', '0%');
             safeSet('kpiCashCollected', '0€');
             safeSet('kpiCashFutureRecurring', '0€');
             safeSet('kpiWaitingCount', '0');
