@@ -48,8 +48,8 @@
             .date-shortcut.active, .view-toggle.active { @apply bg-blue-600 text-white; }
             .date-shortcut:disabled, .view-toggle:disabled { @apply opacity-40 cursor-not-allowed; }
             
-            th { @apply px-2 py-3 bg-slate-700 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
-            td { @apply px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700; }
+            th { @apply px-2 py-2 bg-slate-700 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
+            td { @apply px-2 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700; }
             tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
             tr:last-child td { @apply border-b-0; }
             
@@ -99,11 +99,11 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-b from-gray-900 to-slate-900 text-white min-h-screen p-4 md:p-8">
+<body class="bg-gradient-to-b from-gray-900 to-slate-900 text-white min-h-screen p-4 md:p-6">
 
-    <div class="max-w-7xl mx-auto space-y-8">
+    <div class="max-w-7xl mx-auto space-y-6">
         <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-4">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-2">
             <h1 class="text-3xl font-bold text-teal-300 mb-4 md:mb-0">Tableau de Bord GIA</h1>
             <div class="flex items-center space-x-4">
                 <a href="fomo_tracker.html" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-5 rounded-lg transition-all duration-300 shadow-lg shadow-purple-800/40">Suivi Offres FOMO</a>
@@ -125,8 +125,8 @@
         </section>
 
         <!-- Filtres -->
-        <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-4">
-            <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+        <section class="bg-slate-800/50 p-3 rounded-xl border border-slate-700 space-y-3">
+            <div class="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4">
                 <h2 class="text-lg font-semibold text-gray-300 mr-4 whitespace-nowrap">Période :</h2>
                 <div class="flex-grow flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto"><label for="startDate" class="text-sm font-medium text-gray-400">Du</label><input type="date" id="startDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 w-full sm:w-auto"></div>
                 <div class="flex-grow flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto"><label for="endDate" class="text-sm font-medium text-gray-400">Au</label><input type="date" id="endDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 w-full sm:w-auto"></div>
@@ -149,7 +149,7 @@
         </section>
 
         <!-- KPIs -->
-        <section class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+        <section class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
              <!-- Ligne 1: Tunnel R1 -->
              <div id="kpi-card-r1-planned" class="kpi-card-toggle kpi-card-static border-t-amber-500"><span id="kpiR1Planned" class="text-3xl font-bold text-amber-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R1 Planifiés</span></div>
              <div id="kpi-card-r1-noshow" class="kpi-card-toggle kpi-card-static border-t-red-500"><div class="flex items-center justify-center"><span id="kpiR1NoShowRate" class="text-3xl font-bold text-red-400 block">0%</span><span id="kpiR1NoShowCount" class="kpi-secondary-value text-red-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R1</span></div>
@@ -174,7 +174,7 @@
                     Cliquez sur les KPIs ci-dessus pour afficher/masquer les courbes.
                 </div>
              </div>
-             <div id="chartContainer" class="h-64 flex items-center justify-center text-gray-500">
+             <div id="chartContainer" class="h-56 flex items-center justify-center text-gray-500">
                  <canvas id="mainChart"></canvas>
                  <span id="chartPlaceholder" class="hidden">Graphique à venir...</span>
             </div>
@@ -182,7 +182,7 @@
 
         <!-- Table Détails -->
         <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 overflow-x-auto">
-             <h2 class="text-xl font-semibold text-gray-300 mb-4 sticky top-0 bg-slate-800/90 py-2 z-20 backdrop-blur-sm">Détails des Prospects</h2>
+             <h2 class="text-xl font-semibold text-gray-300 mb-3 sticky top-0 bg-slate-800/90 py-2 z-20 backdrop-blur-sm">Détails des Prospects</h2>
              <table class="w-full divide-y divide-slate-700 table-fixed">
                 <thead class="sticky top-[4.5rem] z-10">
                     <tr>
@@ -523,16 +523,16 @@
                  let aB; if(sV==='R1 Scheduled'){aB=`<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;} else {aB=`<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Détails</a>`;}
                  
                  return `<tr>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 truncate max-w-xs">${pN}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700"><span class="${qC}">${qST}</span></td>
-                     <td class="px-1 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-center">${i.scores?.total??'N/A'}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente')}</span></td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD_R2}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${relaunchDate}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-left">${pA_display}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
-                     <td class="px-2 py-3 whitespace-nowrap text-sm border-b border-slate-700 text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD}</td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 truncate max-w-xs">${pN}</td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm border-b border-slate-700"><span class="${qC}">${qST}</span></td>
+                     <td class="px-1 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-center">${i.scores?.total??'N/A'}</td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm border-b border-slate-700"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente')}</span></td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD_R2}</td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${relaunchDate}</td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm border-b border-slate-700 text-left">${pA_display}</td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm border-b border-slate-700 text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
                  </tr>`;
              }).join('');
          }
