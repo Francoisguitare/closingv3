@@ -518,7 +518,7 @@
                  const pN = i.prospectName || 'N/A'; const ePn = pN.replace(/"/g,'&quot;');
                  const dTD = `${i.prospectDate||'N/A'} ${i.prospectTime?`<span class="text-xs text-gray-400">${i.prospectTime}</span>`:''}`;
                  const dTD_R2 = `${i.prospectDateR2||'-'} ${i.prospectTimeR2 ? `<span class="text-xs text-gray-400">${i.prospectTimeR2}</span>` : ''}`;
-                 const relaunchDate = i.relaunchDate ? `<span class="text-blue-300">${i.relaunchDate}</span>` : '-';
+                 const relaunchDate = (sV === 'Waiting' && i.relaunchDate) ? `<span class="text-blue-300">${i.relaunchDate}</span>` : '-';
                  
                  let aB; if(sV==='R1 Scheduled'){aB=`<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;} else {aB=`<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Détails</a>`;}
                  
