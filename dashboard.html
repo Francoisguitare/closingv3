@@ -124,23 +124,47 @@
              </div>
         </section>
 
-        <!-- Filtres -->
-        <section class="bg-slate-800/50 p-3 rounded-xl border border-slate-700 space-y-3">
-            <div class="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4">
-                <h2 class="text-lg font-semibold text-gray-300 mr-4 whitespace-nowrap">Période :</h2>
-                <div class="flex-grow flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto"><label for="startDate" class="text-sm font-medium text-gray-400">Du</label><input type="date" id="startDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 w-full sm:w-auto"></div>
-                <div class="flex-grow flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto"><label for="endDate" class="text-sm font-medium text-gray-400">Au</label><input type="date" id="endDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 w-full sm:w-auto"></div>
-                <button id="filterButton" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed">Appliquer</button>
+        <!-- Filtres (refonte) -->
+        <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-4">
+            <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <!-- Côté gauche: Sélecteur de date -->
+                <div class="flex items-center gap-3">
+                    <h2 class="text-lg font-semibold text-gray-300 whitespace-nowrap">Période :</h2>
+                    <div class="relative">
+                        <button id="dateRangePickerButton" class="bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 flex items-center gap-2 w-full text-left">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span id="dateRangePickerText" class="whitespace-nowrap"></span>
+                        </button>
+                        <div id="dateRangePickerPopup" class="absolute top-full mt-2 bg-slate-900 border border-slate-700 rounded-lg p-4 shadow-xl z-30 hidden w-max">
+                            <div class="flex items-center gap-4">
+                                <div>
+                                    <label for="startDate" class="block text-sm font-medium text-gray-400 mb-1">Du</label>
+                                    <input type="date" id="startDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
+                                </div>
+                                <div>
+                                    <label for="endDate" class="block text-sm font-medium text-gray-400 mb-1">Au</label>
+                                    <input type="date" id="endDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
+                                </div>
+                            </div>
+                            <div class="flex justify-end mt-4">
+                               <button id="filterButton" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">Appliquer</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Côté droit: Raccourcis -->
+                <div id="dateShortcuts" class="flex flex-wrap items-center gap-x-2 gap-y-2">
+                    <button data-days="0" class="date-shortcut">Aujourd'hui</button>
+                    <button data-days="7" class="date-shortcut">7 Jours</button>
+                    <button data-days="14" class="date-shortcut">14 Jours</button>
+                    <button data-days="30" class="date-shortcut">30 Jours</button>
+                    <button data-days="90" class="date-shortcut">90 Jours</button>
+                    <button data-days="month" class="date-shortcut active">Ce mois-ci</button>
+                </div>
             </div>
-            <div id="dateShortcuts" class="flex flex-wrap items-center gap-x-3 gap-y-2 pt-3 border-t border-slate-700">
-                <span class="text-sm text-gray-400">Raccourcis:</span>
-                <button data-days="0" class="date-shortcut">Aujourd'hui</button>
-                <button data-days="7" class="date-shortcut">7 Jours</button>
-                <button data-days="14" class="date-shortcut">14 Jours</button>
-                <button data-days="30" class="date-shortcut">30 Jours</button>
-                <button data-days="90" class="date-shortcut">90 Jours</button>
-                <button data-days="month" class="date-shortcut active">Ce mois-ci</button>
-            </div>
+            
+            <!-- Vues (reste sur sa propre ligne) -->
             <div id="viewToggles" class="flex flex-wrap items-center gap-x-3 gap-y-2 pt-3 border-t border-slate-700">
                  <span class="text-sm text-gray-400">Vues:</span>
                  <button id="viewTogglePeriod" class="view-toggle active">Vue Période</button>
@@ -562,9 +586,42 @@
             const viewToggles = document.getElementById('viewToggles');
             const viewPeriodBtn = document.getElementById('viewTogglePeriod');
             const viewWaitingBtn = document.getElementById('viewToggleWaiting');
-            if(!s || !e || !f || !shortcuts || !viewToggles || !viewPeriodBtn || !viewWaitingBtn) { console.error("Filter elements missing!"); return; }
+            const dateRangeBtn = document.getElementById('dateRangePickerButton');
+            const dateRangeText = document.getElementById('dateRangePickerText');
+            const dateRangePopup = document.getElementById('dateRangePickerPopup');
 
-            function setDates(startDate, endDate) { s.value = getISODate(startDate); e.value = getISODate(endDate); validateDates(); }
+            if(!s || !e || !f || !shortcuts || !viewToggles || !viewPeriodBtn || !viewWaitingBtn || !dateRangeBtn || !dateRangeText || !dateRangePopup) { 
+                console.error("Filter elements missing!"); 
+                return; 
+            }
+
+            function updateDateRangePickerText() {
+                if (!s.value || !e.value) {
+                    dateRangeText.textContent = "Sélectionner une période";
+                    return;
+                }
+                const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+                const startDate = parseDateString(s.value).toLocaleDateString('fr-FR', options);
+                const endDate = parseDateString(e.value).toLocaleDateString('fr-FR', options);
+                dateRangeText.textContent = `${startDate} - ${endDate}`;
+            }
+
+            dateRangeBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                dateRangePopup.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (event) => {
+                if (!dateRangePopup.classList.contains('hidden') && !dateRangePopup.contains(event.target) && !dateRangeBtn.contains(event.target)) {
+                    dateRangePopup.classList.add('hidden');
+                }
+            });
+
+            function setDates(startDate, endDate) { 
+                s.value = getISODate(startDate); 
+                e.value = getISODate(endDate); 
+                validateDates(); 
+                updateDateRangePickerText();
+            }
             
             function handleShortcutClick(ev){
                 if(ev.target.tagName!=='BUTTON')return;
@@ -592,9 +649,21 @@
             shortcuts.addEventListener('click',handleShortcutClick);
             
             function validateDates(){f.disabled=!s.value||!e.value;}
-            s.addEventListener('input',()=>{shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active')); validateDates(); viewPeriodBtn.click(); });
-            e.addEventListener('input',()=>{shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active')); validateDates(); viewPeriodBtn.click(); });
-            f.addEventListener('click',()=>{ renderFilteredData(); });
+            
+            s.addEventListener('input',()=>{
+                shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active')); 
+                validateDates(); 
+            });
+            e.addEventListener('input',()=>{
+                shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active')); 
+                validateDates();
+            });
+
+            f.addEventListener('click',()=>{ 
+                dateRangePopup.classList.add('hidden');
+                updateDateRangePickerText();
+                renderFilteredData(); 
+            });
             
             viewPeriodBtn.addEventListener('click', () => {
                 currentViewMode = 'period';
@@ -610,6 +679,7 @@
                 updateChartVisibility();
                 const activeShortcut = shortcuts.querySelector('button.active') || shortcuts.querySelector('button[data-days="month"]');
                 if(activeShortcut) activeShortcut.click();
+                else { renderFilteredData(); }
             });
             viewWaitingBtn.addEventListener('click', () => {
                 currentViewMode = 'waiting';
