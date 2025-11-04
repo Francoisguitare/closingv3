@@ -74,9 +74,9 @@
             <!-- Colonne Gauche -->
             <div id="leftColumn" class="md:col-span-2 space-y-4 h-full flex flex-col overflow-hidden">
                 <div class="flex justify-between items-center p-2 flex-shrink-0">
-                    <a id="mainBackButton" href="./dashboard.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 text-sm rounded-lg transition-colors duration-200">&larr; Retour Dashboard</a>
+                    <a id="mainBackButton" href="./index.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 text-sm rounded-lg transition-colors duration-200">&larr; Retour Dashboard</a>
                     <h2 class="text-lg font-semibold text-gray-300">Prospect: <span id="mainProspectName" class="text-white font-bold"></span></h2>
-                    <a id="resetButton" href="./index.html" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-3 text-sm rounded-lg transition-colors duration-200">Reset</a>
+                    <a id="resetButton" href="./dashboard.html" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-3 text-sm rounded-lg transition-colors duration-200">Reset</a>
                 </div>
                 <!-- Coach Questions -->
                 <div id="questionCoachContainer" class="bg-slate-900/50 rounded-xl border border-amber-500/50 shadow-lg flex-shrink-0">
@@ -222,8 +222,8 @@
                     return; // Arrêter l'initialisation
                 }
 
-                if (this.elements.mainBackButton) { this.elements.mainBackButton.href = `dashboard.html`; }
-                if (this.elements.resetButton) { this.elements.resetButton.href = 'index.html'; }
+                if (this.elements.mainBackButton) { this.elements.mainBackButton.href = `index.html`; }
+                if (this.elements.resetButton) { this.elements.resetButton.href = 'dashboard.html'; }
 
                 this.renderAllTags();
                 this.bindEvents();
@@ -364,14 +364,14 @@
             async confirmR2Schedule() { 
                 const success = await this.updateProspectStatusAndFlags('R2 Scheduled', true, true); 
                 if (success) { 
-                    setTimeout(() => { window.location.href = './dashboard.html'; }, 1000); 
+                    setTimeout(() => { window.location.href = './index.html'; }, 1000); 
                 } 
             },
             async confirmR2Rejection() { 
                 const reason = this.elements.lostReasonInput?.value.trim() || ""; 
                 const success = await this.updateProspectStatusAndFlags('Lost', this.state.isR1Completed, false, reason); 
                 if (success) { 
-                    setTimeout(() => { window.location.href = './dashboard.html'; }, 1000); 
+                    setTimeout(() => { window.location.href = './index.html'; }, 1000); 
                 } 
             },
             
@@ -416,7 +416,7 @@
                 // Le statut est déjà 'Feu Rouge', on ne le change pas ici.
                 this.showFeedback("Fiche 'Feu Rouge' enregistrée.", false);
                 setTimeout(() => {
-                    window.location.href = './dashboard.html';
+                    window.location.href = './index.html';
                 }, 1000);
             }
         };
