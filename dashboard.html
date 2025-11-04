@@ -48,8 +48,8 @@
             .date-shortcut.active, .view-toggle.active { @apply bg-blue-600 text-white; }
             .date-shortcut:disabled, .view-toggle:disabled { @apply opacity-40 cursor-not-allowed; }
             
-            th { @apply px-3 py-3 bg-slate-800 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
-            td { @apply px-3 py-3 text-sm text-gray-200 border-b border-slate-700; }
+            th { @apply px-3 py-2 bg-slate-800 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
+            td { @apply px-3 py-2 text-sm text-gray-200 border-b border-slate-700; }
             tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
             tr:last-child td { @apply border-b-0; }
             
@@ -70,8 +70,7 @@
             /* Tooltip customisé */
             .tooltip-container {
                 position: relative;
-                display: inline-block; /* Changed for better text-align behavior */
-                vertical-align: middle; /* Added for alignment consistency */
+                display: inline-block;
             }
             .tooltip-container .tooltip-text {
                 visibility: hidden;
@@ -216,13 +215,18 @@
                         <th class="w-[14%]">Prospect</th>
                         <th class="w-[9%]">Statut Qualif.</th>
                         <th class="w-[6%] text-center">Score</th>
-                        <th class="w-[7%] text-center tooltip-container">Pré-Qualif<span class="tooltip-text !w-[22rem] !-ml-[11rem] text-xs">
-                            Suivi de la pré-qualification :<br/>
-                            <span class="text-slate-400">Gris (...) :</span> Non envoyé<br/>
-                            <span class="text-blue-400">Bleu (→) :</span> Message envoyé<br/>
-                            <span class="text-green-400">Vert (✓) :</span> Pré-qualifié<br/>
-                            <span class="text-red-400">Rouge (✗) :</span> Rejeté
-                        </span></th>
+                        <th class="w-[7%] text-center">
+                            <div class="tooltip-container">
+                                Pré-Qualif
+                                <span class="tooltip-text !w-[22rem] !-ml-[11rem] text-xs">
+                                    Suivi de la pré-qualification :<br/>
+                                    <span class="text-slate-400">Gris (...) :</span> Non envoyé<br/>
+                                    <span class="text-blue-400">Bleu (→) :</span> Message envoyé<br/>
+                                    <span class="text-green-400">Vert (✓) :</span> Pré-qualifié<br/>
+                                    <span class="text-red-400">Rouge (✗) :</span> Rejeté
+                                </span>
+                            </div>
+                        </th>
                         <th class="w-[10%]">Statut</th>
                         <th class="w-[9%]">Date R2</th>
                         <th class="w-[9%]">Date Relance</th>
