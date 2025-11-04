@@ -49,7 +49,7 @@
             .date-shortcut:disabled, .view-toggle:disabled { @apply opacity-40 cursor-not-allowed; }
             
             th { @apply px-3 py-3 bg-slate-800 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
-            td { @apply px-3 py-3 text-sm text-gray-200 border-b border-slate-700; }
+            td { @apply px-3 py-4 text-sm text-gray-200 border-b border-slate-700; }
             tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
             tr:last-child td { @apply border-b-0; }
             
@@ -214,12 +214,12 @@
                 <thead class="sticky top-[2.75rem] z-10">
                     <tr>
                         <th class="w-[9%]">Date R1</th>
-                        <th class="w-[15%]">Prospect</th>
+                        <th class="w-[14%]">Prospect</th>
                         <th class="w-[9%]">Statut Qualif.</th>
-                        <th class="w-[5%] text-center">Score</th>
-                        <th class="w-[6%] text-center tooltip-container">Pré-Qualif<span class="tooltip-text !w-[22rem] !-ml-[11rem] text-xs">
+                        <th class="w-[6%] text-center">Score</th>
+                        <th class="w-[7%] text-center tooltip-container">Pré-Qualif<span class="tooltip-text !w-[22rem] !-ml-[11rem] text-xs">
                             Suivi de la pré-qualification :<br/>
-                            <span class="text-slate-400">Gris (-) :</span> Non envoyé<br/>
+                            <span class="text-slate-400">Gris (...) :</span> Non envoyé<br/>
                             <span class="text-blue-400">Bleu (→) :</span> Message envoyé<br/>
                             <span class="text-green-400">Vert (✓) :</span> Pré-qualifié<br/>
                             <span class="text-red-400">Rouge (✗) :</span> Rejeté
@@ -227,9 +227,9 @@
                         <th class="w-[10%]">Statut</th>
                         <th class="w-[9%]">Date R2</th>
                         <th class="w-[9%]">Date Relance</th>
-                        <th class="w-[8%] text-left">Offre Proposée</th>
+                        <th class="w-[8%]">Offre Proposée</th>
                         <th class="w-[8%] text-right">Montant Total</th>
-                        <th class="w-[12%] text-center">Actions</th>
+                        <th class="w-[11%] text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="detailsTableBody" class="bg-slate-800 divide-y divide-slate-700"></tbody>
@@ -558,7 +558,7 @@
                  const relaunchDate = (sV === 'Waiting' && i.relaunchDate) ? `<span class="text-blue-300">${i.relaunchDate}</span>` : '-';
                  
                  const prequalStatus = i.prequalStatus || 'none';
-                 let prequalIcon, prequalTooltip, prequalBtnClasses = 'prequal-status-btn p-1 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 inline-flex items-center justify-center border border-slate-600 hover:border-slate-500';
+                 let prequalIcon, prequalTooltip, prequalBtnClasses = 'prequal-status-btn p-1.5 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 inline-flex items-center justify-center border border-slate-600 hover:border-slate-500';
                  switch (prequalStatus) {
                     case 'sent':
                         prequalIcon = `<svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>`;
@@ -594,7 +594,7 @@
                      <td class="whitespace-nowrap text-sm"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente')}</span></td>
                      <td class="whitespace-nowrap text-sm text-gray-200">${dTD_R2}</td>
                      <td class="whitespace-nowrap text-sm text-gray-200">${relaunchDate}</td>
-                     <td class="whitespace-nowrap text-sm text-left">${pA_display}</td>
+                     <td class="whitespace-nowrap text-sm">${pA_display}</td>
                      <td class="whitespace-nowrap text-sm text-gray-200 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
                      <td class="text-sm text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
                  </tr>`;
