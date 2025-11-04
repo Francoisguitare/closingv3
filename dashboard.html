@@ -211,16 +211,17 @@
              <table class="w-full divide-y divide-slate-700 table-fixed">
                 <thead class="sticky top-[2.75rem] z-10">
                     <tr>
-                        <th class="w-[9%]">Date R1</th>
-                        <th class="w-[18%]">Prospect</th>
+                        <th class="w-[8%]">Date R1</th>
+                        <th class="w-[16%]">Prospect</th>
                         <th class="w-[9%]">Statut Qualif.</th>
                         <th class="w-[4%] text-center">Score</th>
+                        <th class="w-[5%] text-center tooltip-container">Pré-Qualif<span class="tooltip-text !w-48 !-ml-24">Indique si le message de pré-qualification a été envoyé.</span></th>
                         <th class="w-[10%]">Statut</th>
                         <th class="w-[9%]">Date R2</th>
                         <th class="w-[9%]">Date Relance</th>
                         <th class="w-[7%] text-left">Offre Proposée</th>
                         <th class="w-[8%] text-right">Montant Total</th>
-                        <th class="w-[17%] text-center">Actions</th>
+                        <th class="w-[15%] text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="detailsTableBody" class="bg-slate-800 divide-y divide-slate-700"></tbody>
@@ -382,7 +383,7 @@
         async function fetchDataAndDisplay() {
              if (!db || !appId) { displayError("DB non prête."); return; }
              const tableBody = document.getElementById('detailsTableBody');
-             tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
+             tableBody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
              resetKPIs();
              try {
                  const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const querySnapshot = await getDocs(query(collection(db, collectionPath))); currentData = [];
@@ -402,7 +403,7 @@
              } catch (error) { 
                  console.error("Erreur fetch Firestore:", error); 
                  displayError("Erreur chargement données."); 
-                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
+                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
              }
          }
         
@@ -528,7 +529,7 @@
         function updateTable(data) {
              const tB=document.getElementById('detailsTableBody');
              if(!tB) return;
-             if(data.length===0){tB.innerHTML=`<tr><td colspan="10" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
+             if(data.length===0){tB.innerHTML=`<tr><td colspan="11" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
              tB.innerHTML = data.map(i => {
                  const sV = i.status || 'R1 Scheduled'; const sC = getStatusClass(sV);
                  const pA_text = i.proposedAmount || '';
@@ -547,7 +548,8 @@
                  const dTD = `${i.prospectDate||'N/A'} ${i.prospectTime?`<span class="text-xs text-gray-400">${i.prospectTime}</span>`:''}`;
                  const dTD_R2 = `${i.prospectDateR2||'-'} ${i.prospectTimeR2 ? `<span class="text-xs text-gray-400">${i.prospectTimeR2}</span>` : ''}`;
                  const relaunchDate = (sV === 'Waiting' && i.relaunchDate) ? `<span class="text-blue-300">${i.relaunchDate}</span>` : '-';
-                 
+                 const isPrequalSent = i.isPrequalSent === true;
+
                  let aB; if(sV==='R1 Scheduled'){aB=`<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;} else {aB=`<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors">Détails</a>`;}
                  
                  return `<tr>
@@ -555,6 +557,7 @@
                      <td class="px-2 py-2 text-sm text-gray-200 border-b border-slate-700 truncate max-w-xs">${pN}</td>
                      <td class="px-2 py-2 whitespace-nowrap text-sm border-b border-slate-700"><span class="${qC}">${qST}</span></td>
                      <td class="px-1 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700 text-center">${i.scores?.total??'N/A'}</td>
+                     <td class="px-2 py-2 whitespace-nowrap text-sm border-b border-slate-700 text-center"><input type="checkbox" class="custom-checkbox prequal-checkbox" data-doc-id="${i.id}" ${isPrequalSent ? 'checked' : ''}></td>
                      <td class="px-2 py-2 whitespace-nowrap text-sm border-b border-slate-700"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente')}</span></td>
                      <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${dTD_R2}</td>
                      <td class="px-2 py-2 whitespace-nowrap text-sm text-gray-200 border-b border-slate-700">${relaunchDate}</td>
@@ -696,7 +699,7 @@
             if(monthShortcut) monthShortcut.click();
         }
         
-        function displayError(message) { let d=document.getElementById('dashboardError');if(!d){d=document.createElement('div');d.id='dashboardError';d.className='fixed bottom-4 right-4 p-4 bg-red-800 text-white rounded-lg shadow-xl z-[60]';document.body.appendChild(d);}d.textContent=message;setTimeout(()=>d.remove(),5000); }
+        function displayError(message, isError = false) { let d=document.getElementById('dashboardError');if(!d){d=document.createElement('div');d.id='dashboardError';d.className='fixed bottom-4 right-4 p-4 bg-red-800 text-white rounded-lg shadow-xl z-[60]';document.body.appendChild(d);} if (isError) { d.classList.remove('bg-green-600'); d.classList.add('bg-red-800'); } else { d.classList.remove('bg-red-800'); d.classList.add('bg-green-600'); } d.textContent=message;setTimeout(()=>d.remove(),3000); }
         
         const modalStatusSelect = document.getElementById('modalStatus');
         const cbR1 = document.getElementById('modalIsR1Completed');
@@ -960,9 +963,39 @@
                 confirmButton.textContent = 'Présent (Démarrer)';
             }
         }
+        async function handlePrequalSentToggle(docId, isSent) {
+            const checkbox = document.querySelector(`.prequal-checkbox[data-doc-id="${docId}"]`);
+            if (checkbox) checkbox.disabled = true;
+
+            try {
+                const collectionPath = `artifacts/${appId}/public/data/r1_closings`;
+                const docRef = doc(db, collectionPath, docId);
+                await updateDoc(docRef, { 
+                    isPrequalSent: isSent,
+                    lastUpdatedAt: Timestamp.now() 
+                });
+                const docIndex = currentData.findIndex(item => item.id === docId);
+                if (docIndex > -1) {
+                    currentData[docIndex].isPrequalSent = isSent;
+                }
+                displayError(`Statut pré-qualif mis à jour.`);
+
+            } catch (error) {
+                console.error(`Erreur mise à jour pré-qualif ${docId}:`, error);
+                displayError("Erreur sauvegarde pré-qualif.", true);
+                if (checkbox) checkbox.checked = !isSent; // Revert on error
+            } finally {
+                if (checkbox) checkbox.disabled = false;
+            }
+        }
         function attachListeners() { 
             const tableBody = document.getElementById('detailsTableBody');
-            if(tableBody) tableBody.addEventListener('click',(e)=>{ if(e.target.classList.contains('edit-btn')){ openEditModal(e.target.dataset.docId); } else if(e.target.classList.contains('delete-btn')){ openDeleteConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); } else if(e.target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); } }); 
+            if(tableBody) tableBody.addEventListener('click',(e)=>{ 
+                if(e.target.classList.contains('edit-btn')){ openEditModal(e.target.dataset.docId); } 
+                else if(e.target.classList.contains('delete-btn')){ openDeleteConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); } 
+                else if(e.target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); }
+                else if (e.target.classList.contains('prequal-checkbox')) { const checkbox = e.target; handlePrequalSentToggle(checkbox.dataset.docId, checkbox.checked); }
+            }); 
             document.getElementById('modalCancelButton')?.addEventListener('click',closeEditModal);
             document.getElementById('modalSaveButton')?.addEventListener('click',saveModalChanges);
             document.getElementById('editModal')?.addEventListener('click',(e)=>{if(e.target.id==='editModal')closeEditModal();}); 
@@ -982,7 +1015,7 @@
                 await fetchDataAndDisplay();
             } catch (error) {
                 console.error("Erreur critique au démarrage:", error);
-                displayError("Erreur de chargement initiale. Vérifiez la console.");
+                displayError("Erreur de chargement initiale. Vérifiez la console.", true);
             }
         });
     </script>
