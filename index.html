@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="fr" class="h-full">
 <head>
@@ -177,15 +179,15 @@
         <section class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
              <!-- Ligne 1: Tunnel R1 -->
              <div id="kpi-card-r1-planned" class="kpi-card-toggle kpi-card-static border-t-amber-500"><span id="kpiR1Planned" class="text-3xl font-bold text-amber-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R1 Planifiés</span></div>
-             <div id="kpi-card-r1-noshow" class="kpi-card-toggle kpi-card-static border-t-red-500"><div class="flex items-center justify-center"><span id="kpiR1NoShowRate" class="text-3xl font-bold text-red-400 block">0%</span><span id="kpiR1NoShowCount" class="kpi-secondary-value text-red-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R1</span></div>
+             <div id="kpi-card-r1-noshow" class="kpi-card-toggle kpi-card-static border-t-red-500"><span id="kpi-target-r1-noshow" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">~30%</span><div class="flex items-center justify-center"><span id="kpiR1NoShowRate" class="text-3xl font-bold text-red-400 block">0%</span><span id="kpiR1NoShowCount" class="kpi-secondary-value text-red-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R1</span></div>
              <div id="kpi-card-r1-completed" class="kpi-card-toggle kpi-card-static border-t-blue-500"><span id="kpiR1Completed" class="text-3xl font-bold text-blue-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R1 Effectués</span></div>
-             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR1toR2Rate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1toR2Count" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Eff → R2</span></div>
+             <div class="kpi-card-static border-t-teal-500"><span id="kpi-target-r1-to-r2" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">35%</span><div class="flex items-center justify-center"><span id="kpiR1toR2Rate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1toR2Count" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Eff → R2</span></div>
              <div id="kpi-card-r2-count" class="kpi-card-toggle kpi-card-static border-t-purple-500"><span id="kpiR2Count" class="text-3xl font-bold text-purple-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R2 Planifiés</span></div>
-             <div id="kpi-card-r2-noshow" class="kpi-card-toggle kpi-card-static border-t-orange-500"><div class="flex items-center justify-center"><span id="kpiR2NoShowRate" class="text-3xl font-bold text-orange-400 block">0%</span><span id="kpiR2NoShowCount" class="kpi-secondary-value !text-orange-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R2</span></div>
+             <div id="kpi-card-r2-noshow" class="kpi-card-toggle kpi-card-static border-t-orange-500"><span id="kpi-target-r2-noshow" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">20%</span><div class="flex items-center justify-center"><span id="kpiR2NoShowRate" class="text-3xl font-bold text-orange-400 block">0%</span><span id="kpiR2NoShowCount" class="kpi-secondary-value !text-orange-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R2</span></div>
              
              <!-- Ligne 2: Tunnel R2 & Cash -->
-             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR1PlanToClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1PlanToClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Plan → Closé</span></div>
-             <div class="kpi-card-static border-t-teal-500"><div class="flex items-center justify-center"><span id="kpiR2toClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR2toClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R2 Eff → Closé</span></div>
+             <div class="kpi-card-static border-t-teal-500"><span id="kpi-target-r1plan-to-closed" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">10%</span><div class="flex items-center justify-center"><span id="kpiR1PlanToClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1PlanToClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Plan → Closé</span></div>
+             <div class="kpi-card-static border-t-teal-500"><span id="kpi-target-r2-to-closed" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">55%</span><div class="flex items-center justify-center"><span id="kpiR2toClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR2toClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R2 Eff → Closé</span></div>
              <div id="kpi-card-closing" class="kpi-card-toggle kpi-card-static border-t-green-500"><span id="kpiClosingCount" class="text-3xl font-bold text-green-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Closings</span></div>
              <div id="kpi-card-cash" class="kpi-card-toggle kpi-card-static border-t-teal-500"><span id="kpiCashCollected" class="text-3xl font-bold text-teal-300 block mb-1">0€</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cash Période</span></div>
              <div id="kpi-card-cash-future" class="kpi-card-static border-t-teal-500"><span id="kpiCashFutureRecurring" class="text-3xl font-bold text-teal-300 block mb-1">0€</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cash Récurrent Futur</span></div>
@@ -328,6 +330,28 @@
         function getHHMMTime(date) { return date.toTimeString().split(' ')[0].substring(0, 5); }
         function formatFirebaseTimestamp(timestamp) { if (!timestamp || typeof timestamp.toDate !== 'function') return 'N/A'; try { return timestamp.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return 'Date invalide'; } }
         async function initFirebase() { try { const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" }; appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; const app = initializeApp(fC); db = getFirestore(app); auth = getAuth(app); return new Promise((resolve) => { onAuthStateChanged(auth, async (user) => { if (user) { resolve(); } else { try { await signInAnonymously(auth); resolve(); } catch (e){ console.error("Err anon:", e); resolve(); }} }); }); } catch (error) { console.error("Erreur init Firebase:", error); displayError("Erreur connexion DB."); return Promise.reject(error); } }
+        const safeSet = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; else console.warn(`Element KPI non trouvé: #${id}`); };
+        function updateTargetColor(targetId, kpiValue, targetValue, isLowerBetter = false) {
+            const targetEl = document.getElementById(targetId);
+            if (!targetEl) return;
+            let isGoalMet = false;
+            const margin = 5; // Absolute 5 percentage point margin
+            if (isLowerBetter) {
+                // Goal is met if the value is less than or equal to the target,
+                // or if it's slightly over but within the margin.
+                isGoalMet = kpiValue <= targetValue + margin;
+            } else {
+                // Goal is met if the value is greater than or equal to the target,
+                // or if it's slightly under but within the margin.
+                isGoalMet = kpiValue >= targetValue - margin;
+            }
+            targetEl.classList.remove('text-slate-500', 'text-green-400');
+            if (isGoalMet) {
+                targetEl.classList.add('text-green-400');
+            } else {
+                targetEl.classList.add('text-slate-500');
+            }
+        }
 
         function renderFilteredData() {
             const startDateStr = document.getElementById('startDate').value;
@@ -438,8 +462,6 @@
             } catch(e) { console.error("Erreur calcul J-180:", e); safeSet('kpi-180-planned', 'Err'); }
         }
         
-        const safeSet = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; else console.warn(`Element KPI non trouvé: #${id}`); };
-
         function updateKPIs(dataForPeriod, filterStart, filterEnd) {
             // Étape 1: Compter les événements de base pour la période (basé sur la date de R1)
             const r1Planned = dataForPeriod.length;
@@ -481,6 +503,13 @@
             safeSet('kpiR1PlanToClosedCount', `(${closedCount})`);
             safeSet('kpiCashCollected', `${cashCollectedInPeriod.toLocaleString('fr-FR')}€`);
             safeSet('kpiCashFutureRecurring', `${cashFutureRecurring.toLocaleString('fr-FR')}€`);
+
+            // Mettre à jour les couleurs des objectifs
+            updateTargetColor('kpi-target-r1-noshow', noShowR1Rate, 30, true);
+            updateTargetColor('kpi-target-r1-to-r2', r1ToR2Rate, 35, false);
+            updateTargetColor('kpi-target-r2-noshow', noShowR2Rate, 20, true);
+            updateTargetColor('kpi-target-r1plan-to-closed', r1PlanToClosedRate, 10, false);
+            updateTargetColor('kpi-target-r2-to-closed', r2ToClosedRate, 55, false);
         }
         
         function updateChart(dataForChart, filterStart, filterEnd) { const ctx = document.getElementById('mainChart'); if (!ctx) return; const dailyData = {}; let currentDate = new Date(filterStart); while (currentDate <= filterEnd) { const dateString = getISODate(currentDate); dailyData[dateString] = { r1: 0, r1_planned: 0, r1_noshow: 0, r2_count: 0, r2_noshow: 0, closed: 0, cash: 0 }; currentDate.setDate(currentDate.getDate() + 1); } dataForChart.forEach(item => { const status = item.status || 'R1 Scheduled'; const itemR1DateStr = item.prospectDate; const itemR1Date = parseDateString(itemR1DateStr); if (itemR1Date && itemR1Date >= filterStart && itemR1Date <= filterEnd) { const dateStr = itemR1DateStr; if(dailyData[dateStr]) { dailyData[dateStr].r1_planned++; if (status === 'No Show R1') dailyData[dateStr].r1_noshow++; if (item.isR1Completed === true) dailyData[dateStr].r1++; if (item.isR2Completed === true || status === 'No Show R2') dailyData[dateStr].r2_count++; if (status === 'No Show R2') dailyData[dateStr].r2_noshow++; if (item.isClosed === true) dailyData[dateStr].closed++; } } if (item.isClosed === true) { const pT = item.paymentType || 'unique'; let amt = 0; if (pT === 'unique') { const pD = itemR1Date; amt = Number(item.amountCollected) || 0; if (pD && pD >= filterStart && pD <= filterEnd) { const cashDateStr = getISODate(pD); if (dailyData[cashDateStr]) dailyData[cashDateStr].cash += amt; } } else if (pT === 'installments') { const pD = parseDateString(item.startDateOfPayment); amt = Number(item.installmentAmount) || 0; const nI = parseInt(item.numberOfInstallments) || 0; if (pD && amt > 0 && nI > 0) { for (let i = 0; i < nI; i++) { const cPD = addMonths(pD, i); if (cPD >= filterStart && cPD <= filterEnd) { const cPDS = getISODate(cPD); if (dailyData[cPDS]) dailyData[cPDS].cash += amt; } } } } } }); const labels = Object.keys(dailyData).sort(); const r1PlannedData = labels.map(date => dailyData[date].r1_planned); const r1NoShowData = labels.map(date => dailyData[date].r1_noshow); const r1Data = labels.map(date => dailyData[date].r1); const r2CountData = labels.map(date => dailyData[date].r2_count); const r2NoShowData = labels.map(date => dailyData[date].r2_noshow); const closedData = labels.map(date => dailyData[date].closed); const cashData = labels.map(date => dailyData[date].cash); if (mainChartInstance) { mainChartInstance.destroy(); } const isHidden = (id) => { const card = document.getElementById(id); return card ? !card.classList.contains('kpi-chart-active') : true; }; mainChartInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'R1 Planifiés', data: r1PlannedData, borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-planned') }, { label: 'No Show R1', data: r1NoShowData, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-noshow') }, { label: 'R1 Effectués', data: r1Data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-completed') }, { label: 'R2 Planifiés', data: r2CountData, borderColor: 'rgba(168, 85, 247, 1)', backgroundColor: 'rgba(168, 85, 247, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-count') }, { label: 'No Show R2', data: r2NoShowData, borderColor: 'rgba(185, 28, 28, 1)', backgroundColor: 'rgba(185, 28, 28, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-noshow') }, { label: 'Closings', data: closedData, borderColor: 'rgba(34, 197, 94, 1)', backgroundColor: 'rgba(34, 197, 94, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-closing') }, { label: 'Cash Période (€)', data: cashData, borderColor: 'rgba(20, 184, 166, 1)', backgroundColor: 'rgba(20, 184, 166, 0.7)', tension: 0.1, yAxisID: 'yCash', hidden: isHidden('kpi-card-cash') }, ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, yCount: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#374151' }, title: { display: true, text: 'Nombre', color: '#9ca3af' } }, yCash: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#9ca3af', callback: (value) => `${value}€` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Montant (€)', color: '#9ca3af' } } }, plugins: { legend: { display: false }, tooltip: { titleFont: { size: 14 }, bodyFont: { size: 12 }, footerFont: { size: 10 } } } } }); 
