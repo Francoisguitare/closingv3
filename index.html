@@ -131,28 +131,15 @@
         <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-4">
             <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <!-- Côté gauche: Sélecteur de date -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 flex-wrap">
                     <h2 class="text-lg font-semibold text-gray-300 whitespace-nowrap">Période :</h2>
-                    <div class="relative">
-                        <button id="dateRangePickerButton" class="bg-slate-700 border border-slate-600 rounded-lg py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-teal-400 flex items-center gap-2 w-full text-left">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            <span id="dateRangePickerText" class="whitespace-nowrap"></span>
-                        </button>
-                        <div id="dateRangePickerPopup" class="absolute top-full mt-2 bg-slate-900 border border-slate-700 rounded-lg p-4 shadow-xl z-30 hidden w-max">
-                            <div class="flex items-center gap-4">
-                                <div>
-                                    <label for="startDate" class="block text-sm font-medium text-gray-400 mb-1">Du</label>
-                                    <input type="date" id="startDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
-                                </div>
-                                <div>
-                                    <label for="endDate" class="block text-sm font-medium text-gray-400 mb-1">Au</label>
-                                    <input type="date" id="endDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
-                                </div>
-                            </div>
-                            <div class="flex justify-end mt-4">
-                               <button id="filterButton" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">Appliquer</button>
-                            </div>
-                        </div>
+                    <div class="flex items-center gap-2">
+                        <label for="startDate" class="text-sm font-medium text-gray-400">Du</label>
+                        <input type="date" id="startDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="endDate" class="text-sm font-medium text-gray-400">Au</label>
+                        <input type="date" id="endDate" required class="bg-slate-700 border border-slate-600 rounded-lg py-1.5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
                     </div>
                 </div>
 
@@ -165,13 +152,6 @@
                     <button data-days="90" class="date-shortcut">90 Jours</button>
                     <button data-days="month" class="date-shortcut active">Ce mois-ci</button>
                 </div>
-            </div>
-            
-            <!-- Vues (reste sur sa propre ligne) -->
-            <div id="viewToggles" class="flex flex-wrap items-center gap-x-3 gap-y-2 pt-3 border-t border-slate-700">
-                 <span class="text-sm text-gray-400">Vues:</span>
-                 <button id="viewTogglePeriod" class="view-toggle active">Vue Période</button>
-                 <button id="viewToggleWaiting" class="view-toggle">Afficher "En Attente" (Total)</button>
             </div>
         </section>
 
@@ -191,7 +171,7 @@
              <div id="kpi-card-closing" class="kpi-card-toggle kpi-card-static border-t-green-500"><span id="kpiClosingCount" class="text-3xl font-bold text-green-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Closings</span></div>
              <div id="kpi-card-cash" class="kpi-card-toggle kpi-card-static border-t-teal-500"><span id="kpiCashCollected" class="text-3xl font-bold text-teal-300 block mb-1">0€</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cash Période</span></div>
              <div id="kpi-card-cash-future" class="kpi-card-static border-t-teal-500"><span id="kpiCashFutureRecurring" class="text-3xl font-bold text-teal-300 block mb-1">0€</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cash Récurrent Futur</span></div>
-             <div id="kpi-card-waiting" class="kpi-card-static border-t-blue-400"><span id="kpiWaitingCount" class="text-3xl font-bold text-blue-400 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Total "En Attente"</span></div>
+             <div id="kpi-card-waiting" class="kpi-card-toggle kpi-card-static border-t-blue-400"><span id="kpiWaitingCount" class="text-3xl font-bold text-blue-400 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Total "En Attente"</span></div>
         </section>
 
         <!-- Graphique -->
@@ -233,7 +213,7 @@
                         <th class="w-[10%]">Statut</th>
                         <th class="w-[9%]">Date R2</th>
                         <th class="w-[9%]">Date Relance</th>
-                        <th class="w-[8%]">Offre Proposée</th>
+                        <th class="w-[8%]">Note</th>
                         <th class="w-[8%] text-right">Montant Total</th>
                         <th class="w-[11%] text-center">Actions</th>
                     </tr>
@@ -300,7 +280,7 @@
                 </div> 
             </fieldset> 
             
-            <fieldset id="offerDetailsContainer" class="border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Offre Proposée</legend> <div class="pt-2"> <div> <label for="modalProposedAmount" class="block text-sm font-medium text-gray-300 mb-1">Détails de l'offre / Montant proposé</label> <textarea id="modalProposedAmount" placeholder="Ex: 3000€ paiement unique, ou offre spéciale avec arrangement..." rows="3" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></textarea> </div> </div> </fieldset>
+            <fieldset id="offerDetailsContainer" class="border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Note</legend> <div class="pt-2"> <div> <label for="modalNote" class="block text-sm font-medium text-gray-300 mb-1">Note</label> <textarea id="modalNote" placeholder="Ajouter une note..." rows="3" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></textarea> </div> </div> </fieldset>
 
             <fieldset id="paymentDetailsContainer" class="hidden border border-slate-600 p-3 rounded-lg"> <legend class="text-sm font-medium text-gray-400 px-1">Détails Paiement</legend> <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"> <div><label for="modalPaymentType" class="block text-sm font-medium text-gray-300 mb-1">Type Paiement</label><select id="modalPaymentType" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="unique">Unique</option><option value="installments">Échelonné</option></select></div> <div><label for="modalAmountCollected" class="block text-sm font-medium text-gray-300 mb-1">Montant Total Contrat (€)</label><input type="number" id="modalAmountCollected" placeholder="ex: 3600" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></div> </div> <div id="installmentsFields" class="installments-fields hidden grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4"> <div><label for="modalInstallmentAmount" class="block text-sm font-medium text-gray-300 mb-1">Montant Échéance (€)</label><input type="number" id="modalInstallmentAmount" placeholder="ex: 720" min="0" step="any" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></div> <div><label for="modalNumberOfInstallments" class="block text-sm font-medium text-gray-300 mb-1">Nb Échéances</label><input type="number" id="modalNumberOfInstallments" placeholder="ex: 5" min="1" step="1" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></div> <div><label for="modalStartDateOfPayment" class="block text-sm font-medium text-gray-300 mb-1">Date 1ère Échéance</label><input type="date" id="modalStartDateOfPayment" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"></div> </div> </fieldset> 
             <div class="flex justify-end space-x-3 pt-4 border-t border-slate-600 mt-6"><button id="modalCancelButton" type="button" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button><button id="modalSaveButton" type="button" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Enregistrer</button></div> <p id="modalError" class="text-red-400 text-sm mt-2 text-center h-4"></p> 
@@ -329,6 +309,7 @@
         function getISODateWithOffset(days) { const date = new Date(); date.setDate(date.getDate() + days); return date.toISOString().split('T')[0]; }
         function getHHMMTime(date) { return date.toTimeString().split(' ')[0].substring(0, 5); }
         function formatFirebaseTimestamp(timestamp) { if (!timestamp || typeof timestamp.toDate !== 'function') return 'N/A'; try { return timestamp.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return 'Date invalide'; } }
+        function formatDateToDDMM(dateString) { if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) { return dateString || '-'; } const parts = dateString.split('-'); return `${parts[2]}/${parts[1]}`; }
         async function initFirebase() { try { const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" }; appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; const app = initializeApp(fC); db = getFirestore(app); auth = getAuth(app); return new Promise((resolve) => { onAuthStateChanged(auth, async (user) => { if (user) { resolve(); } else { try { await signInAnonymously(auth); resolve(); } catch (e){ console.error("Err anon:", e); resolve(); }} }); }); } catch (error) { console.error("Erreur init Firebase:", error); displayError("Erreur connexion DB."); return Promise.reject(error); } }
         const safeSet = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; else console.warn(`Element KPI non trouvé: #${id}`); };
         function updateTargetColor(targetId, kpiValue) {
@@ -536,27 +517,48 @@
         }
 
         function setupKpiCardToggles() {
-            const kpiCards = [ 'kpi-card-r1-planned', 'kpi-card-r1-noshow', 'kpi-card-r1-completed', 'kpi-card-r2-count', 'kpi-card-r2-noshow', 'kpi-card-closing', 'kpi-card-cash' ];
+            const kpiCards = [ 'kpi-card-r1-planned', 'kpi-card-r1-noshow', 'kpi-card-r1-completed', 'kpi-card-r2-count', 'kpi-card-r2-noshow', 'kpi-card-closing', 'kpi-card-cash', 'kpi-card-waiting' ];
             
             const kpiToggleLogic = (e) => {
                 const card = e.currentTarget;
                 const cardId = card.id;
                 const wasActive = card.classList.contains('kpi-chart-active');
-                
-                deactiveAllKpiCards(); // Cache tout visuellement
-                document.getElementById('viewTogglePeriod').classList.remove('active');
-                document.getElementById('viewToggleWaiting').classList.remove('active');
+                const dateShortcutsContainer = document.getElementById('dateShortcuts');
+
+                deactiveAllKpiCards(); // Deactivates all cards visually first.
 
                 if (wasActive) {
+                    // Reset to default period view (all items in period)
+                    currentViewMode = 'period';
                     currentKpiFilter = null;
-                    document.getElementById('viewTogglePeriod').click(); 
+                    // Visually activate the default KPI card for the chart
+                    const defaultCard = document.getElementById('kpi-card-r1-planned');
+                    if(defaultCard) {
+                        defaultCard.classList.add('kpi-chart-active');
+                        defaultCard.classList.remove('opacity-60');
+                    }
+                    // Ensure dates are enabled
+                    dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = false);
+                    renderFilteredData();
                 } else {
+                    // Activate the new card
                     card.classList.add('kpi-chart-active');
                     card.classList.remove('opacity-60');
-                    currentKpiFilter = cardId; 
-                    renderFilteredData(); 
+
+                    if (cardId === 'kpi-card-waiting') {
+                        currentViewMode = 'waiting';
+                        currentKpiFilter = null;
+                        dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = true);
+                        // Also visually deactivate date shortcuts
+                        dateShortcutsContainer.querySelectorAll('button.active').forEach(b => b.classList.remove('active'));
+                    } else {
+                        currentViewMode = 'period';
+                        currentKpiFilter = cardId;
+                        dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = false);
+                    }
+                    renderFilteredData();
                 }
-                updateChartVisibility(); // Mettre à jour le graphique après le changement
+                updateChartVisibility();
             };
 
             kpiCards.forEach(id => {
@@ -582,11 +584,11 @@
              if(data.length===0){tB.innerHTML=`<tr><td colspan="11" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
              tB.innerHTML = data.map(i => {
                  const sV = i.status || 'R1 Scheduled'; const sC = getStatusClass(sV);
-                 const pA_text = i.proposedAmount || '';
+                 const pA_text = i.comments || i.proposedAmount || '';
                  let pA_display;
                  if (pA_text) {
                      const escaped_text = pA_text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                     pA_display = `<span class="tooltip-container text-sky-400 cursor-help">Voir offre<span class="tooltip-text">${escaped_text}</span></span>`;
+                     pA_display = `<span class="tooltip-container text-sky-400 cursor-help">Voir<span class="tooltip-text">${escaped_text}</span></span>`;
                  } else {
                      pA_display = '<span class="text-gray-400">-</span>';
                  }
@@ -595,9 +597,12 @@
                  const qST = (i.qualificationStatus && i.qualificationStatus !== 'N/A') ? i.qualificationStatus.replace(' (Client Rêvé)','').trim() : 'N/A';
                  const qC = qST.includes('VERT')?'text-green-400':(qST.includes('ROUGE')?'text-red-400':'text-gray-400');
                  const pN = i.prospectName || 'N/A'; const ePn = pN.replace(/"/g,'&quot;');
-                 const dTD = `${i.prospectDate||'N/A'} ${i.prospectTime?`<span class="text-xs text-gray-400">${i.prospectTime}</span>`:''}`;
-                 const dTD_R2 = `${i.prospectDateR2||'-'} ${i.prospectTimeR2 ? `<span class="text-xs text-gray-400">${i.prospectTimeR2}</span>` : ''}`;
-                 const relaunchDate = (sV === 'Waiting' && i.relaunchDate) ? `<span class="text-blue-300">${i.relaunchDate}</span>` : '-';
+                 const formattedR1Date = formatDateToDDMM(i.prospectDate);
+                 const dTD = `${formattedR1Date} ${i.prospectTime?`<span class="text-xs text-gray-400">${i.prospectTime}</span>`:''}`;
+                 const formattedR2Date = formatDateToDDMM(i.prospectDateR2);
+                 const dTD_R2 = `${formattedR2Date} ${i.prospectTimeR2 ? `<span class="text-xs text-gray-400">${i.prospectTimeR2}</span>` : ''}`;
+                 const formattedRelaunchDate = formatDateToDDMM(i.relaunchDate);
+                 const relaunchDate = (sV === 'Waiting' && i.relaunchDate) ? `<span class="text-blue-300">${formattedRelaunchDate}</span>` : '-';
                  
                  const prequalStatus = i.prequalStatus || 'none';
                  let prequalIcon, prequalTooltip, prequalBtnClasses = 'prequal-status-btn p-0 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 inline-flex items-center justify-center border border-slate-600 hover:border-slate-500';
@@ -659,119 +664,69 @@
         }
         
         function setupFiltersAndLoad() {
-            const s=document.getElementById('startDate'),e=document.getElementById('endDate'),f=document.getElementById('filterButton');
-            const shortcuts=document.getElementById('dateShortcuts');
-            const viewToggles = document.getElementById('viewToggles');
-            const viewPeriodBtn = document.getElementById('viewTogglePeriod');
-            const viewWaitingBtn = document.getElementById('viewToggleWaiting');
-            const dateRangeBtn = document.getElementById('dateRangePickerButton');
-            const dateRangeText = document.getElementById('dateRangePickerText');
-            const dateRangePopup = document.getElementById('dateRangePickerPopup');
+            const s = document.getElementById('startDate'), e = document.getElementById('endDate');
+            const shortcuts = document.getElementById('dateShortcuts');
 
-            if(!s || !e || !f || !shortcuts || !viewToggles || !viewPeriodBtn || !viewWaitingBtn || !dateRangeBtn || !dateRangeText || !dateRangePopup) { 
-                console.error("Filter elements missing!"); 
-                return; 
+            if (!s || !e || !shortcuts) {
+                console.error("Filter elements missing!");
+                return;
             }
 
-            function updateDateRangePickerText() {
-                if (!s.value || !e.value) {
-                    dateRangeText.textContent = "Sélectionner une période";
-                    return;
-                }
-                const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-                const startDate = parseDateString(s.value).toLocaleDateString('fr-FR', options);
-                const endDate = parseDateString(e.value).toLocaleDateString('fr-FR', options);
-                dateRangeText.textContent = `${startDate} - ${endDate}`;
+            function setDates(startDate, endDate) {
+                s.value = getISODate(startDate);
+                e.value = getISODate(endDate);
             }
 
-            dateRangeBtn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                dateRangePopup.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (event) => {
-                if (!dateRangePopup.classList.contains('hidden') && !dateRangePopup.contains(event.target) && !dateRangeBtn.contains(event.target)) {
-                    dateRangePopup.classList.add('hidden');
-                }
-            });
-
-            function setDates(startDate, endDate) { 
-                s.value = getISODate(startDate); 
-                e.value = getISODate(endDate); 
-                validateDates(); 
-                updateDateRangePickerText();
-            }
-            
-            function handleShortcutClick(ev){
-                if(ev.target.tagName!=='BUTTON')return;
-                shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active'));
-                ev.target.classList.add('active');
-                currentViewMode = 'period';
-                currentKpiFilter = null;
-                viewPeriodBtn.classList.add('active');
-                viewWaitingBtn.classList.remove('active');
-                deactiveAllKpiCards(); 
-                const defaultActiveCard = document.getElementById('kpi-card-r1-planned');
-                if(defaultActiveCard) {
-                    defaultActiveCard.classList.add('kpi-chart-active');
-                    defaultActiveCard.classList.remove('opacity-60');
-                }
-                updateChartVisibility();
-                
-                const days=ev.target.dataset.days; const today=new Date(); let startDate=new Date(today),endDate=new Date(today);
-                if(days==='month'){startDate=new Date(today.getFullYear(),today.getMonth(),1);endDate=new Date(today.getFullYear(),today.getMonth()+1,0);}
-                else{const numDays=parseInt(days,10); if(numDays===0){startDate.setDate(today.getDate());}else{startDate.setDate(today.getDate()-numDays+1);}}
-                const sUTC=new Date(Date.UTC(startDate.getFullYear(),startDate.getMonth(),startDate.getDate())); const eUTC=new Date(Date.UTC(endDate.getFullYear(),endDate.getMonth(),endDate.getDate()));
-                setDates(sUTC,eUTC);
-                renderFilteredData();
-            }
-            shortcuts.addEventListener('click',handleShortcutClick);
-            
-            function validateDates(){f.disabled=!s.value||!e.value;}
-            
-            s.addEventListener('input',()=>{
-                shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active')); 
-                validateDates(); 
-            });
-            e.addEventListener('input',()=>{
-                shortcuts.querySelectorAll('button').forEach(btn=>btn.classList.remove('active')); 
-                validateDates();
-            });
-
-            f.addEventListener('click',()=>{ 
-                dateRangePopup.classList.add('hidden');
-                updateDateRangePickerText();
-                renderFilteredData(); 
-            });
-            
-            viewPeriodBtn.addEventListener('click', () => {
-                currentViewMode = 'period';
-                currentKpiFilter = null;
-                viewPeriodBtn.classList.add('active');
-                viewWaitingBtn.classList.remove('active');
-                deactiveAllKpiCards();
-                const defaultActiveCard = document.getElementById('kpi-card-r1-planned');
-                if(defaultActiveCard) {
-                    defaultActiveCard.classList.add('kpi-chart-active');
-                    defaultActiveCard.classList.remove('opacity-60');
-                }
-                updateChartVisibility();
-                const activeShortcut = shortcuts.querySelector('button.active') || shortcuts.querySelector('button[data-days="month"]');
-                if(activeShortcut) activeShortcut.click();
-                else { renderFilteredData(); }
-            });
-            viewWaitingBtn.addEventListener('click', () => {
-                currentViewMode = 'waiting';
-                currentKpiFilter = null;
-                viewWaitingBtn.classList.add('active');
-                viewPeriodBtn.classList.remove('active');
+            function handleShortcutClick(ev) {
+                if (ev.target.tagName !== 'BUTTON') return;
                 shortcuts.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                ev.target.classList.add('active');
+                
+                // Force period view and reset KPI filters
+                currentViewMode = 'period';
+                currentKpiFilter = null; 
                 deactiveAllKpiCards();
-                updateChartVisibility();
+                const defaultActiveCard = document.getElementById('kpi-card-r1-planned');
+                if (defaultActiveCard) {
+                    defaultActiveCard.classList.add('kpi-chart-active');
+                    defaultActiveCard.classList.remove('opacity-60');
+                }
+
+                const days = ev.target.dataset.days;
+                const today = new Date();
+                let startDate = new Date(today),
+                    endDate = new Date(today);
+                if (days === 'month') {
+                    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                } else {
+                    const numDays = parseInt(days, 10);
+                    if (numDays === 0) {
+                        startDate.setDate(today.getDate());
+                    } else {
+                        startDate.setDate(today.getDate() - numDays + 1);
+                    }
+                }
+                const sUTC = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
+                const eUTC = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
+                setDates(sUTC, eUTC);
                 renderFilteredData();
-            });
-            
+                updateChartVisibility();
+            }
+            shortcuts.addEventListener('click', handleShortcutClick);
+
+            function onDateChange() {
+                shortcuts.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                if (s.value && e.value) {
+                    renderFilteredData();
+                }
+            }
+
+            s.addEventListener('change', onDateChange);
+            e.addEventListener('change', onDateChange);
+
             const monthShortcut = shortcuts.querySelector('button[data-days="month"]');
-            if(monthShortcut) monthShortcut.click();
+            if (monthShortcut) monthShortcut.click();
         }
         
         function displayError(message, isError = false) { let d=document.getElementById('dashboardError');if(!d){d=document.createElement('div');d.id='dashboardError';d.className='fixed bottom-4 right-4 p-4 bg-red-800 text-white rounded-lg shadow-xl z-[60]';document.body.appendChild(d);} if (isError) { d.classList.remove('bg-green-600'); d.classList.add('bg-red-800'); } else { d.classList.remove('bg-red-800'); d.classList.add('bg-green-600'); } d.textContent=message;setTimeout(()=>d.remove(),3000); }
@@ -899,7 +854,7 @@
              document.getElementById('modalLostReasonContainer').classList.toggle('hidden', !showReason); 
              document.getElementById('modalRelaunchDateContainer').classList.toggle('hidden', !showRelaunch); 
              
-             document.getElementById('modalProposedAmount').value = pD.proposedAmount || '';
+             document.getElementById('modalNote').value = pD.comments || pD.proposedAmount || '';
              
              const pT=pD.paymentType||'unique'; 
              document.getElementById('modalPaymentType').value = pT; 
@@ -941,7 +896,8 @@
                      isR1Completed: nS === 'No Show R1' ? false : isR1,
                      isR2Completed: isR2,
                      isClosed: isClosed,
-                     proposedAmount: document.getElementById('modalProposedAmount').value.trim(),
+                     comments: document.getElementById('modalNote').value.trim(),
+                     proposedAmount: deleteField(),
                      // La date et l'heure du R1 ne sont pas incluses dans l'update, elles ne changent donc pas
                      lastUpdatedAt:Timestamp.now()
                  };

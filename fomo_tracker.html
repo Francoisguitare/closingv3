@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr" class="h-full">
 <head>
@@ -328,8 +329,7 @@
                 if (status.includes('ROUGE')) statusClass = 'status-rouge';
                 const statusText = status.replace(' (Client Rêvé)', '').trim();
 
-                const proposedAmount = p.proposedAmount ? p.proposedAmount.match(/\d+/) : null;
-                const amount = proposedAmount ? proposedAmount[0] : (p.amountCollected || 'N/A');
+                const amount = p.amountCollected || 'N/A';
                 const amountText = !isNaN(Number(amount)) ? `${Number(amount).toLocaleString('fr-FR')}€` : '-';
                 const score = p.scores?.total ?? 'N/A';
 
