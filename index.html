@@ -266,6 +266,10 @@
                         </div>
                         <div class="ml-3 text-sm flex-grow">
                             <label for="modalIsClosed" class="font-medium text-white">Closé</label>
+                            <div id="modalClosingDateContainer" class="mt-2 hidden">
+                                <label for="modalClosingDate" class="block text-xs font-medium text-gray-300 mb-1">Date de Closing</label>
+                                <input type="date" id="modalClosingDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -274,8 +278,7 @@
             <fieldset class="border border-slate-600 p-3 rounded-lg"> 
                 <legend class="text-sm font-medium text-gray-400 px-1">Statut & Suivi</legend> 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"> 
-                    <div><label for="modalStatus" class="block text-sm font-medium text-gray-300 mb-1">Statut Actuel</label><select id="modalStatus" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="R1 Scheduled">R1 Planifié</option><option value="R1 Completed">R1 Effectué</option><option value="No Show R1">No Show R1</option> <option value="R2 Scheduled">R2 Planifié</option><option value="No Show R2">No Show R2</option><option value="Waiting">En Attente</option> <option value="Closed">Closé</option> <option value="Lost">Perdu</option> <option value="Other">Autre</option></select></div> 
-                    <div id="modalLostReasonContainer" class="hidden sm:col-span-1 space-y-1"><label for="modalLostReason" class="block text-sm font-medium text-gray-300">Raison si Perdu/NoShow</label><input type="text" id="modalLostReason" placeholder="Ex: Prix, Timing..." class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"></div> 
+                    <div id="modalStatusContainer"><label for="modalStatus" class="block text-sm font-medium text-gray-300 mb-1">Statut Actuel</label><select id="modalStatus" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="R1 Scheduled">R1 Planifié</option><option value="R1 Completed">R1 Effectué</option><option value="No Show R1">No Show R1</option> <option value="R2 Scheduled">R2 Planifié</option><option value="No Show R2">No Show R2</option><option value="Waiting">En Attente</option> <option value="Closed">Closé</option> <option value="Lost">Perdu</option> <option value="Other">Autre</option></select></div> 
                     <div id="modalRelaunchDateContainer" class="hidden sm:col-span-1 space-y-1"><label for="modalRelaunchDate" class="block text-sm font-medium text-gray-300">Date de Relance</label><input type="date" id="modalRelaunchDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"></div> 
                 </div> 
             </fieldset> 
@@ -379,10 +382,16 @@
                         tableData = dataForPeriod.filter(item => item.status === 'No Show R2');
                         break;
                     case 'kpi-card-closing':
-                        tableData = dataForPeriod.filter(item => item.isClosed === true);
+                        tableData = currentData.filter(p => {
+                            const cD = parseDateString(p.closingDate);
+                            return p.isClosed === true && cD && cD >= filterStartDate && cD <= filterEndDate;
+                        });
                         break;
                     case 'kpi-card-cash':
-                        tableData = dataForPeriod.filter(item => item.isClosed === true);
+                        tableData = currentData.filter(p => {
+                            const cD = parseDateString(p.closingDate);
+                            return p.isClosed === true && cD && cD >= filterStartDate && cD <= filterEndDate;
+                        });
                         break;
                     default:
                         // If an unknown filter is set, fall back to showing everything for the period.
@@ -453,48 +462,77 @@
         }
         
         function updateKPIs(dataForPeriod, filterStart, filterEnd) {
-            // Étape 1: Compter les événements de base pour la période (basé sur la date de R1)
+            // Étape 1: Compter les événements pour le COHORT (basé sur la date de R1) pour les taux de conversion
             const r1Planned = dataForPeriod.length;
             const r1NoShow = dataForPeriod.filter(p => p.status === 'No Show R1').length;
             const r1Completed = dataForPeriod.filter(p => p.isR1Completed === true).length;
             const r2Planned = dataForPeriod.filter(p => p.isR2Completed === true || p.status === 'No Show R2').length;
             const r2NoShow = dataForPeriod.filter(p => p.status === 'No Show R2').length;
-            const closedCount = dataForPeriod.filter(p => p.isClosed === true).length;
-            
-            // Étape 2: Calculer les taux de conversion et les pourcentages
+            const closedCountForCohort = dataForPeriod.filter(p => p.isClosed === true).length;
+
+            // Étape 1.5: Compter les closings pour la PÉRIODE (basé sur closingDate) pour le KPI principal
+            const closedInPeriod = currentData.filter(p => {
+                const closingDate = parseDateString(p.closingDate);
+                return p.isClosed === true && closingDate && closingDate >= filterStart && closingDate <= filterEnd;
+            });
+            const closedCountForKPI = closedInPeriod.length;
+
+            // Étape 2: Calculer les taux de conversion (basé sur le COHORT)
             const noShowR1Rate = r1Planned > 0 ? (r1NoShow / r1Planned * 100) : 0;
             const noShowR2Rate = r2Planned > 0 ? (r2NoShow / r2Planned * 100) : 0;
             const r1ToR2Rate = r1Completed > 0 ? (r2Planned / r1Completed * 100) : 0;
-            
-            // Un R2 effectué est un R2 planifié qui n'est pas un "No Show"
             const r2Completed = r2Planned - r2NoShow;
-            const r2ToClosedRate = r2Completed > 0 ? (closedCount / r2Completed * 100) : 0;
-            const r1PlanToClosedRate = r1Planned > 0 ? (closedCount / r1Planned * 100) : 0;
+            const r2ToClosedRate = r2Completed > 0 ? (closedCountForCohort / r2Completed * 100) : 0;
+            const r1PlanToClosedRate = r1Planned > 0 ? (closedCountForCohort / r1Planned * 100) : 0;
 
-            // Étape 3: Calculer le cash (inchangé)
+            // Étape 3: Calculer le cash (basé sur la PÉRIODE)
             let cashCollectedInPeriod = 0;
             let cashFutureRecurring = 0;
-            currentData.forEach(item => { if (item.isClosed === true) { const pT=item.paymentType||'unique'; const tA=Number(item.amountCollected)||0; if(pT==='unique'){ const paymentDate = parseDateString(item.prospectDate); if(paymentDate && paymentDate >= filterStart && paymentDate <= filterEnd){ cashCollectedInPeriod += tA; }} else if(pT==='installments'){ const iA=Number(item.installmentAmount)||0; const nI=parseInt(item.numberOfInstallments)||0; const fPD=parseDateString(item.startDateOfPayment); if(iA>0&&nI>0&&fPD){ for(let i=0;i<nI;i++){ const pD=addMonths(fPD,i); if(pD>=filterStart&&pD<=filterEnd){ cashCollectedInPeriod+=iA; } else if(pD>filterEnd){ cashFutureRecurring+=iA; }}}} } });
+            currentData.forEach(item => {
+                if (item.isClosed === true) {
+                    const pT = item.paymentType || 'unique';
+                    const tA = Number(item.amountCollected) || 0;
+                    if (pT === 'unique') {
+                        const paymentDate = parseDateString(item.closingDate); // Utilise la date de closing
+                        if (paymentDate && paymentDate >= filterStart && paymentDate <= filterEnd) {
+                            cashCollectedInPeriod += tA;
+                        }
+                    } else if (pT === 'installments') {
+                        const iA = Number(item.installmentAmount) || 0;
+                        const nI = parseInt(item.numberOfInstallments) || 0;
+                        const fPD = parseDateString(item.startDateOfPayment);
+                        if (iA > 0 && nI > 0 && fPD) {
+                            for (let i = 0; i < nI; i++) {
+                                const pD = addMonths(fPD, i);
+                                if (pD >= filterStart && pD <= filterEnd) {
+                                    cashCollectedInPeriod += iA;
+                                } else if (pD > filterEnd) {
+                                    cashFutureRecurring += iA;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
 
             // Étape 4: Mettre à jour l'interface utilisateur
             safeSet('kpiR1Planned', r1Planned);
             safeSet('kpiR1NoShowRate', `${noShowR1Rate.toFixed(1)}%`);
             safeSet('kpiR1NoShowCount', `(${r1NoShow})`);
             safeSet('kpiR1Completed', r1Completed);
-            safeSet('kpiR2Count', r2Planned); // "R2 Planifiés"
+            safeSet('kpiR2Count', r2Planned);
             safeSet('kpiR2NoShowRate', `${noShowR2Rate.toFixed(1)}%`);
             safeSet('kpiR2NoShowCount', `(${r2NoShow})`);
-            safeSet('kpiClosingCount', closedCount);
+            safeSet('kpiClosingCount', closedCountForKPI); // Utilise le compte de la période
             safeSet('kpiR1toR2Rate', `${r1ToR2Rate.toFixed(1)}%`);
             safeSet('kpiR1toR2Count', `(${r2Planned})`);
             safeSet('kpiR2toClosedRate', `${r2ToClosedRate.toFixed(1)}%`);
-            safeSet('kpiR2toClosedCount', `(${closedCount})`);
+            safeSet('kpiR2toClosedCount', `(${closedCountForCohort})`); // Utilise le compte du cohort
             safeSet('kpiR1PlanToClosedRate', `${r1PlanToClosedRate.toFixed(1)}%`);
-            safeSet('kpiR1PlanToClosedCount', `(${closedCount})`);
+            safeSet('kpiR1PlanToClosedCount', `(${closedCountForCohort})`); // Utilise le compte du cohort
             safeSet('kpiCashCollected', `${cashCollectedInPeriod.toLocaleString('fr-FR')}€`);
             safeSet('kpiCashFutureRecurring', `${cashFutureRecurring.toLocaleString('fr-FR')}€`);
 
-            // Mettre à jour les couleurs des objectifs
             updateTargetColor('kpi-target-r1-noshow', noShowR1Rate);
             updateTargetColor('kpi-target-r1-to-r2', r1ToR2Rate);
             updateTargetColor('kpi-target-r2-noshow', noShowR2Rate);
@@ -502,7 +540,80 @@
             updateTargetColor('kpi-target-r2-to-closed', r2ToClosedRate);
         }
         
-        function updateChart(dataForChart, filterStart, filterEnd) { const ctx = document.getElementById('mainChart'); if (!ctx) return; const dailyData = {}; let currentDate = new Date(filterStart); while (currentDate <= filterEnd) { const dateString = getISODate(currentDate); dailyData[dateString] = { r1: 0, r1_planned: 0, r1_noshow: 0, r2_count: 0, r2_noshow: 0, closed: 0, cash: 0 }; currentDate.setDate(currentDate.getDate() + 1); } dataForChart.forEach(item => { const status = item.status || 'R1 Scheduled'; const itemR1DateStr = item.prospectDate; const itemR1Date = parseDateString(itemR1DateStr); if (itemR1Date && itemR1Date >= filterStart && itemR1Date <= filterEnd) { const dateStr = itemR1DateStr; if(dailyData[dateStr]) { dailyData[dateStr].r1_planned++; if (status === 'No Show R1') dailyData[dateStr].r1_noshow++; if (item.isR1Completed === true) dailyData[dateStr].r1++; if (item.isR2Completed === true || status === 'No Show R2') dailyData[dateStr].r2_count++; if (status === 'No Show R2') dailyData[dateStr].r2_noshow++; if (item.isClosed === true) dailyData[dateStr].closed++; } } if (item.isClosed === true) { const pT = item.paymentType || 'unique'; let amt = 0; if (pT === 'unique') { const pD = itemR1Date; amt = Number(item.amountCollected) || 0; if (pD && pD >= filterStart && pD <= filterEnd) { const cashDateStr = getISODate(pD); if (dailyData[cashDateStr]) dailyData[cashDateStr].cash += amt; } } else if (pT === 'installments') { const pD = parseDateString(item.startDateOfPayment); amt = Number(item.installmentAmount) || 0; const nI = parseInt(item.numberOfInstallments) || 0; if (pD && amt > 0 && nI > 0) { for (let i = 0; i < nI; i++) { const cPD = addMonths(pD, i); if (cPD >= filterStart && cPD <= filterEnd) { const cPDS = getISODate(cPD); if (dailyData[cPDS]) dailyData[cPDS].cash += amt; } } } } } }); const labels = Object.keys(dailyData).sort(); const r1PlannedData = labels.map(date => dailyData[date].r1_planned); const r1NoShowData = labels.map(date => dailyData[date].r1_noshow); const r1Data = labels.map(date => dailyData[date].r1); const r2CountData = labels.map(date => dailyData[date].r2_count); const r2NoShowData = labels.map(date => dailyData[date].r2_noshow); const closedData = labels.map(date => dailyData[date].closed); const cashData = labels.map(date => dailyData[date].cash); if (mainChartInstance) { mainChartInstance.destroy(); } const isHidden = (id) => { const card = document.getElementById(id); return card ? !card.classList.contains('kpi-chart-active') : true; }; mainChartInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'R1 Planifiés', data: r1PlannedData, borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-planned') }, { label: 'No Show R1', data: r1NoShowData, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-noshow') }, { label: 'R1 Effectués', data: r1Data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-completed') }, { label: 'R2 Planifiés', data: r2CountData, borderColor: 'rgba(168, 85, 247, 1)', backgroundColor: 'rgba(168, 85, 247, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-count') }, { label: 'No Show R2', data: r2NoShowData, borderColor: 'rgba(185, 28, 28, 1)', backgroundColor: 'rgba(185, 28, 28, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-noshow') }, { label: 'Closings', data: closedData, borderColor: 'rgba(34, 197, 94, 1)', backgroundColor: 'rgba(34, 197, 94, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-closing') }, { label: 'Cash Période (€)', data: cashData, borderColor: 'rgba(20, 184, 166, 1)', backgroundColor: 'rgba(20, 184, 166, 0.7)', tension: 0.1, yAxisID: 'yCash', hidden: isHidden('kpi-card-cash') }, ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, yCount: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#374151' }, title: { display: true, text: 'Nombre', color: '#9ca3af' } }, yCash: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#9ca3af', callback: (value) => `${value}€` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Montant (€)', color: '#9ca3af' } } }, plugins: { legend: { display: false }, tooltip: { titleFont: { size: 14 }, bodyFont: { size: 12 }, footerFont: { size: 10 } } } } }); 
+        function updateChart(dataForChart, filterStart, filterEnd) {
+            const ctx = document.getElementById('mainChart');
+            if (!ctx) return;
+        
+            const dailyData = {};
+            let currentDate = new Date(filterStart);
+            while (currentDate <= filterEnd) {
+                const dateString = getISODate(currentDate);
+                dailyData[dateString] = { r1: 0, r1_planned: 0, r1_noshow: 0, r2_count: 0, r2_noshow: 0, closed: 0, cash: 0 };
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        
+            // Remplir les données du COHORT (R1, R2) basé sur la date de R1
+            dataForChart.forEach(item => {
+                const itemR1DateStr = item.prospectDate;
+                if (dailyData[itemR1DateStr]) {
+                    dailyData[itemR1DateStr].r1_planned++;
+                    if (item.status === 'No Show R1') dailyData[itemR1DateStr].r1_noshow++;
+                    if (item.isR1Completed === true) dailyData[itemR1DateStr].r1++;
+                    if (item.isR2Completed === true || item.status === 'No Show R2') dailyData[itemR1DateStr].r2_count++;
+                    if (item.status === 'No Show R2') dailyData[itemR1DateStr].r2_noshow++;
+                }
+            });
+        
+            // Remplir les données de la PÉRIODE (Closings, Cash) basé sur la date de l'événement
+            currentData.forEach(item => {
+                if (item.isClosed === true) {
+                    // Compter le closing à sa date de closing
+                    const closingDate = parseDateString(item.closingDate);
+                    if (closingDate && closingDate >= filterStart && closingDate <= filterEnd) {
+                        const closingDateStr = getISODate(closingDate);
+                        if (dailyData[closingDateStr]) {
+                            dailyData[closingDateStr].closed++;
+                        }
+                    }
+        
+                    // Attribuer le cash
+                    const pT = item.paymentType || 'unique';
+                    if (pT === 'unique') {
+                        const pD = closingDate; // Utilise la date de closing
+                        const amt = Number(item.amountCollected) || 0;
+                        if (pD && pD >= filterStart && pD <= filterEnd) {
+                            const cashDateStr = getISODate(pD);
+                            if (dailyData[cashDateStr]) dailyData[cashDateStr].cash += amt;
+                        }
+                    } else if (pT === 'installments') {
+                        const pD = parseDateString(item.startDateOfPayment);
+                        const amt = Number(item.installmentAmount) || 0;
+                        const nI = parseInt(item.numberOfInstallments) || 0;
+                        if (pD && amt > 0 && nI > 0) {
+                            for (let i = 0; i < nI; i++) {
+                                const cPD = addMonths(pD, i);
+                                if (cPD >= filterStart && cPD <= filterEnd) {
+                                    const cPDS = getISODate(cPD);
+                                    if (dailyData[cPDS]) dailyData[cPDS].cash += amt;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        
+            const labels = Object.keys(dailyData).sort();
+            const r1PlannedData = labels.map(date => dailyData[date].r1_planned);
+            const r1NoShowData = labels.map(date => dailyData[date].r1_noshow);
+            const r1Data = labels.map(date => dailyData[date].r1);
+            const r2CountData = labels.map(date => dailyData[date].r2_count);
+            const r2NoShowData = labels.map(date => dailyData[date].r2_noshow);
+            const closedData = labels.map(date => dailyData[date].closed);
+            const cashData = labels.map(date => dailyData[date].cash);
+        
+            if (mainChartInstance) { mainChartInstance.destroy(); }
+            const isHidden = (id) => { const card = document.getElementById(id); return card ? !card.classList.contains('kpi-chart-active') : true; };
+            mainChartInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'R1 Planifiés', data: r1PlannedData, borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-planned') }, { label: 'No Show R1', data: r1NoShowData, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-noshow') }, { label: 'R1 Effectués', data: r1Data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-completed') }, { label: 'R2 Planifiés', data: r2CountData, borderColor: 'rgba(168, 85, 247, 1)', backgroundColor: 'rgba(168, 85, 247, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-count') }, { label: 'No Show R2', data: r2NoShowData, borderColor: 'rgba(185, 28, 28, 1)', backgroundColor: 'rgba(185, 28, 28, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-noshow') }, { label: 'Closings', data: closedData, borderColor: 'rgba(34, 197, 94, 1)', backgroundColor: 'rgba(34, 197, 94, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-closing') }, { label: 'Cash Période (€)', data: cashData, borderColor: 'rgba(20, 184, 166, 1)', backgroundColor: 'rgba(20, 184, 166, 0.7)', tension: 0.1, yAxisID: 'yCash', hidden: isHidden('kpi-card-cash') }, ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, yCount: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#374151' }, title: { display: true, text: 'Nombre', color: '#9ca3af' } }, yCash: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#9ca3af', callback: (value) => `${value}€` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Montant (€)', color: '#9ca3af' } } }, plugins: { legend: { display: false }, tooltip: { titleFont: { size: 14 }, bodyFont: { size: 12 }, footerFont: { size: 10 } } } } }); 
             updateChartVisibility();
         }
         
@@ -755,8 +866,16 @@
 
             const fieldsR2 = document.getElementById('modalR2Fields');
             const paymentDetailsContainer = document.getElementById('paymentDetailsContainer');
+            const closingDateContainer = document.getElementById('modalClosingDateContainer');
+            const closingDateInput = document.getElementById('modalClosingDate');
+
             if(fieldsR2) fieldsR2.classList.toggle('hidden', !cbR2.checked);
             if(paymentDetailsContainer) paymentDetailsContainer.classList.toggle('hidden', !cbClosed.checked);
+            if(closingDateContainer) closingDateContainer.classList.toggle('hidden', !cbClosed.checked);
+
+            if(cbClosed.checked && closingDateInput && !closingDateInput.value) {
+                closingDateInput.value = getISODate(new Date());
+            }
         }
 
         if(cbR1) cbR1.addEventListener('change', updateModalCheckboxesLogic);
@@ -765,14 +884,13 @@
         
         if(modalStatusSelect) modalStatusSelect.addEventListener('change', () => {
              const status = modalStatusSelect.value;
-             const lostReasonContainer = document.getElementById('modalLostReasonContainer');
              const relaunchDateContainer = document.getElementById('modalRelaunchDateContainer');
-             if(!lostReasonContainer || !relaunchDateContainer) return;
+             const statusContainer = document.getElementById('modalStatusContainer');
+             if(!relaunchDateContainer || !statusContainer) return;
              
-             const showReason = status === 'Lost' || status.startsWith('No Show');
              const showRelaunch = status === 'Waiting';
-             lostReasonContainer.classList.toggle('hidden', !showReason);
              relaunchDateContainer.classList.toggle('hidden', !showRelaunch);
+             statusContainer.classList.toggle('sm:col-span-2', !showRelaunch);
              
              const today = new Date(); const todayStr = getISODate(today); const todayTime = getHHMMTime(today);
              
@@ -794,6 +912,10 @@
              const paymentDateInput = document.getElementById('modalStartDateOfPayment');
              if (status === 'Closed' && paymentDateInput && !paymentDateInput.value) {
                  paymentDateInput.value = todayStr;
+             }
+             const closingDateInput = document.getElementById('modalClosingDate');
+             if (status === 'Closed' && closingDateInput && !closingDateInput.value) {
+                closingDateInput.value = todayStr;
              }
         });
         
@@ -843,16 +965,17 @@
              if(cbR1) cbR1.checked = pD.isR1Completed || false;
              if(cbR2) cbR2.checked = pD.isR2Completed || false;
              if(cbClosed) cbClosed.checked = pD.isClosed || false;
+             document.getElementById('modalClosingDate').value = pD.closingDate || '';
              updateModalCheckboxesLogic();
              
              const cS=pD.status||'R1 Scheduled'; 
              if(modalStatusSelect) modalStatusSelect.value=cS; 
-             document.getElementById('modalLostReason').value=pD.lostReason||''; 
-             document.getElementById('modalRelaunchDate').value = pD.relaunchDate || ''; 
-             const showReason = cS === 'Lost' || cS.startsWith('No Show');
+             document.getElementById('modalRelaunchDate').value = pD.relaunchDate || '';
+             const statusContainer = document.getElementById('modalStatusContainer');
+             const relaunchDateContainer = document.getElementById('modalRelaunchDateContainer');
              const showRelaunch = cS === 'Waiting'; 
-             document.getElementById('modalLostReasonContainer').classList.toggle('hidden', !showReason); 
-             document.getElementById('modalRelaunchDateContainer').classList.toggle('hidden', !showRelaunch); 
+             relaunchDateContainer.classList.toggle('hidden', !showRelaunch); 
+             if(statusContainer) statusContainer.classList.toggle('sm:col-span-2', !showRelaunch);
              
              document.getElementById('modalNote').value = pD.comments || pD.proposedAmount || '';
              
@@ -898,7 +1021,6 @@
                      isClosed: isClosed,
                      comments: document.getElementById('modalNote').value.trim(),
                      proposedAmount: deleteField(),
-                     // La date et l'heure du R1 ne sont pas incluses dans l'update, elles ne changent donc pas
                      lastUpdatedAt:Timestamp.now()
                  };
                  
@@ -908,9 +1030,13 @@
                  if (nS === 'Waiting') { dTU.relaunchDate = document.getElementById('modalRelaunchDate').value || null; } 
                  else { dTU.relaunchDate = deleteField(); }
                  
-                 if(nS==='Lost' || nS.startsWith('No Show')){ dTU.lostReason=document.getElementById('modalLostReason').value.trim(); } else { dTU.lostReason=deleteField(); }
+                 dTU.lostReason=deleteField();
 
                  if(isClosed){
+                    const closingDate = document.getElementById('modalClosingDate').value;
+                    if (!closingDate) { throw new Error("La date de closing est requise."); }
+                    dTU.closingDate = closingDate;
+
                     const nPT=document.getElementById('modalPaymentType').value;
                     dTU.paymentType=nPT;
                     dTU.amountCollected=Number(document.getElementById('modalAmountCollected').value)||0;
@@ -924,6 +1050,7 @@
                         dTU.installmentAmount=deleteField();dTU.numberOfInstallments=deleteField();dTU.startDateOfPayment=deleteField();
                     }
                  } else {
+                    dTU.closingDate=deleteField();
                     dTU.paymentType=deleteField();dTU.amountCollected=deleteField();dTU.installmentAmount=deleteField();dTU.numberOfInstallments=deleteField();dTU.startDateOfPayment=deleteField();
                  }
                  
@@ -933,7 +1060,6 @@
                  const docIndex = currentData.findIndex(item => item.id === dId);
                  if (docIndex > -1) { 
                      const oldData = currentData[docIndex];
-                     // On fusionne les nouvelles données, mais on s'assure de ne pas écraser la date/heure R1
                      const updatedData = { ...oldData, ...dTU };
 
                      Object.keys(dTU).forEach(key => {

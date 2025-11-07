@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr" class="h-full">
 <head>
@@ -209,7 +210,7 @@
             <h2 id="notesModalTitle" class="text-xl font-semibold text-amber-300">Préciser la raison</h2>
             <input type="hidden" id="notesModalStatus">
             <div>
-                <label for="notesModalTextarea" class="block text-sm font-medium text-gray-300 mb-2">Notes (Raison du statut 'Perdu' ou 'En attente') :</label>
+                <label id="notesModalLabel" for="notesModalTextarea" class="block text-sm font-medium text-gray-300 mb-2">Notes (Raison du statut 'Perdu' ou 'En attente') :</label>
                 <textarea id="notesModalTextarea" rows="5" placeholder="Ex: Prix, Timing, Doit réfléchir..." class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400"></textarea>
             </div>
             <div class="flex justify-end space-x-3 pt-4 border-t border-slate-600">
@@ -230,7 +231,7 @@
         const badgeData={0:[0,0,0,-2,0],1:[1,0,0,2,0],2:[3,0,0,3,0],3:[0,0,0,0,0],4:[2,0,0,0,0],5:[4,0,0,0,0],6:[5,0,0,0,0],7:[0,0,0,0,0],8:[0,1,0,0,0],9:[0,2,0,0,0],10:[0,2,0,0,0],11:[0,-1,-2,0,0],12:[0,-5,-2,0,0],13:[0,2,0,0,0],14:[0,2,1,0,0],15:[0,2,2,0,0],16:[0,2,0,0,0],17:[0,0,2,0,0],18:[0,0,3,0,0],19:[0,0,4,0,0],20:[0,0,5,0,0],21:[0,0,5,0,0],22:[0,0,0,0,1],23:[0,0,0,0,2],24:[0,0,0,0,3],25:[0,0,0,0,4],26:[0,1,0,0,1],27:[0,1,0,0,2],28:[0,2,0,0,3],29:[0,3,0,0,3],30:[0,0,0,0,0],31:[0,0,0,0,0],32:[0,0,1,0,0],33:[0,0,2,0,0],34:[0,0,0,-2,0],35:[0,0,0,1,0],36:[0,0,0,3,0],37:[0,-3,-1,0,0],38:[0,1,0,0,0],39:[0,2,0,0,0],40:[0,5,0,0,0]};
         const maxScores={dispo:8,motiv:18,adeq:25,capa:6,competence:7};
         const SEUILS={motiv:5,capa:2,total:35,dispo:3,adeq:3,competence:3};
-        const initialState={prospectFirstName:'',prospectLastName:'',prospectDate:'',customNotes:'',lostReason:'',currentDocId: null, isViewingMode: false, currentStatus: null, isR1Completed: false, context:{statut:'',temps:'',age:'',experience:'',parcours:'',materiel:[],douleur:[],consequence:'',style:[]}};
+        const initialState={prospectFirstName:'',prospectLastName:'',prospectDate:'',customNotes:'',lostReason:'',comments:'',currentDocId: null, isViewingMode: false, currentStatus: null, isR1Completed: false, context:{statut:'',temps:'',age:'',experience:'',parcours:'',materiel:[],douleur:[],consequence:'',style:[]}};
         const badgeColorRanks={0:'red',1:'green',2:'rainbow',3:'red',4:'green',5:'rainbow',6:'rainbow',7:'orange',8:'orange',9:'green',10:'green',11:'red',12:'red-dark',13:'green',14:'orange',15:'orange',16:'green',17:'green',18:'rainbow',19:'rainbow',20:'rainbow',21:'rainbow',22:'orange',23:'orange',24:'green',25:'rainbow',26:'orange',27:'green',28:'green',29:'rainbow',30:'orange',31:'orange',32:'green',33:'rainbow',34:'red-dark',35:'green',36:'rainbow',37:'red',38:'green',39:'green',40:'rainbow'};
         const colorRankOrder={'red-dark':0,'red':1,'orange':2,'green':3,'rainbow':4};
         const tagStyles={base:"w-[140px] min-h-[44px] inline-flex items-center justify-center text-center p-1 rounded-lg text-xs font-medium transition-all duration-200 shadow-md border",inactive:"bg-slate-700 text-slate-300 hover:bg-slate-600",active:{'rainbow':"bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg -translate-y-0.5",'green':"bg-green-600 text-white shadow-lg -translate-y-0.5",'orange':"bg-amber-600 text-white shadow-lg -translate-y-0.5",'red':"bg-red-600 text-white shadow-lg -translate-y-0.5",'red-dark':"bg-red-800 text-white shadow-lg -translate-y-0.5"},borders:{'rainbow':"border-purple-700",'green':"border-green-700",'orange':"border-amber-700",'red':"border-red-700",'red-dark':"border-red-900"}};
@@ -275,7 +276,7 @@
                 this.switchScreen('main');
             },
 
-            cacheElements() { const $ = (id) => document.getElementById(id); const ids = ['mainScreen', 'giaPitchScreen', 'mainBackButton', 'resetButton', 'mainProspectName', 'contextStatutContainer', 'contextTempsContainer', 'contextAgeContainer', 'contextDouleursContainer', 'contextConsequenceContainer', 'contextExperienceContainer', 'contextParcoursContainer', 'contextStyleContainer', 'contextMaterielContainer', 'gaugeDispo', 'gaugeMotiv', 'gaugeAdeq', 'gaugeCapa', 'gaugeCompetence', 'gaugeDispoLabel', 'gaugeMotivLabel', 'gaugeAdeqLabel', 'gaugeCapaLabel', 'gaugeCompetenceLabel', 'totalScore', 'qualificationStatus', 'qualificationText', 'finalDiagnosticContainer', 'diagnosticForts', 'diagnosticVigilance', 'diagnosticVigilanceTitle', 'questionCoachList', 'showPitchButton', 'notesTextarea', 'pitchBackButton', 'scheduleR2ConfirmButton', 'rejectR2Button', 'lostReasonInput', 'lostReasonContainer', 'coachToggleTrigger', 'coachToggleIcon', 'exportPdfButton', 'dashboardColumn', 'dashboardContent', 'mainGrid', 'leftColumn', 'leftColumnContent', 'appFeedback', 'saveAndExitButton', 'waitingButton', 'notesModal', 'notesModalTitle', 'notesModalStatus', 'notesModalTextarea', 'notesModalCancelButton', 'notesModalSaveButton']; ids.forEach(id => { const el = $(id); if (el) { this.elements[id] = el; } }); },
+            cacheElements() { const $ = (id) => document.getElementById(id); const ids = ['mainScreen', 'giaPitchScreen', 'mainBackButton', 'resetButton', 'mainProspectName', 'contextStatutContainer', 'contextTempsContainer', 'contextAgeContainer', 'contextDouleursContainer', 'contextConsequenceContainer', 'contextExperienceContainer', 'contextParcoursContainer', 'contextStyleContainer', 'contextMaterielContainer', 'gaugeDispo', 'gaugeMotiv', 'gaugeAdeq', 'gaugeCapa', 'gaugeCompetence', 'gaugeDispoLabel', 'gaugeMotivLabel', 'gaugeAdeqLabel', 'gaugeCapaLabel', 'gaugeCompetenceLabel', 'totalScore', 'qualificationStatus', 'qualificationText', 'finalDiagnosticContainer', 'diagnosticForts', 'diagnosticVigilance', 'diagnosticVigilanceTitle', 'questionCoachList', 'showPitchButton', 'notesTextarea', 'pitchBackButton', 'scheduleR2ConfirmButton', 'rejectR2Button', 'lostReasonInput', 'lostReasonContainer', 'coachToggleTrigger', 'coachToggleIcon', 'exportPdfButton', 'dashboardColumn', 'dashboardContent', 'mainGrid', 'leftColumn', 'leftColumnContent', 'appFeedback', 'saveAndExitButton', 'waitingButton', 'notesModal', 'notesModalTitle', 'notesModalStatus', 'notesModalTextarea', 'notesModalCancelButton', 'notesModalSaveButton', 'notesModalLabel']; ids.forEach(id => { const el = $(id); if (el) { this.elements[id] = el; } }); },
             bindEvents() {
                 this.elements.mainScreen?.addEventListener('click', (event) => { const b = event.target.closest('button[data-type]'); if (b) { this.handleTagClick(b); } });
                 this.elements.notesTextarea?.addEventListener('input', (e) => this.handleNotesInput(e));
@@ -375,7 +376,7 @@
 
             async updateProspectDoc() { const { db } = window.firebaseServices || {}; const docId = this.state.currentDocId; if (!db || !docId) return; try { const { appId } = window.firebaseServices; const cP = `artifacts/${appId}/public/data/r1_closings`; const dR = doc(db, cP, docId); const scores = this.calculateScores(this.state.context); const qual = this.updateQualification(scores, this.state.context, true); const dTU = { context: this.state.context, customNotes: this.state.customNotes, scores: scores, qualificationStatus: qual.status, qualificationText: qual.text, lastUpdatedAt: Timestamp.now() }; await updateDoc(dR, dTU); } catch (error) { console.error(`Err MAJ auto doc ${docId}:`, error); this.showFeedback("Erreur sauvegarde auto!", true); } },
             
-            async updateProspectStatusAndFlags(newStatus, isR1Completed = null, isR2Completed = null, reason = "", showFeedbackMsg = true) { 
+            async updateProspectStatusAndFlags(newStatus, isR1Completed = null, isR2Completed = null, reason = "", showFeedbackMsg = true, comments = null) { 
                 const { db } = window.firebaseServices || {}; 
                 const docId = this.state.currentDocId; 
                 if (!db || !docId) { 
@@ -390,6 +391,7 @@
 
                     if (isR1Completed !== null) dTU.isR1Completed = isR1Completed;
                     if (isR2Completed !== null) dTU.isR2Completed = isR2Completed;
+                    if (comments !== null) dTU.comments = comments;
 
                     if (newStatus === 'Lost' || newStatus.startsWith('No Show') || newStatus === 'Waiting') { 
                         dTU.lostReason = reason || ""; 
@@ -417,12 +419,21 @@
 
             openNotesModal(status) {
                 if (!this.elements.notesModal) return;
-                const { notesModal, notesModalTitle, notesModalStatus, notesModalTextarea } = this.elements;
+                const { notesModal, notesModalTitle, notesModalLabel, notesModalStatus, notesModalTextarea } = this.elements;
                 
                 notesModalStatus.value = status;
-                notesModalTitle.textContent = status === 'Lost' ? "Raison du Refus (Ne passe pas en R2)" : "Mettre en attente";
-
-                notesModalTextarea.value = this.state.lostReason || '';
+                
+                if (status === 'Lost') {
+                    notesModalTitle.textContent = "Ajouter une note";
+                    notesModalLabel.textContent = "Note (préciser le motif du refus)";
+                    notesModalTextarea.value = '';
+                    notesModalTextarea.placeholder = "Ex: Prix, Timing, ne correspond pas au besoin...";
+                } else { // status === 'Waiting'
+                    notesModalTitle.textContent = "Mettre en attente";
+                    notesModalLabel.textContent = "Notes (Raison du statut 'En attente')";
+                    notesModalTextarea.value = this.state.lostReason || '';
+                    notesModalTextarea.placeholder = "Ex: Doit réfléchir, rappel le JJ/MM...";
+                }
 
                 notesModal.classList.remove('hidden');
                 notesModal.classList.add('flex');
@@ -439,16 +450,17 @@
                 if (!notesModalSaveButton || !notesModalStatus || !notesModalTextarea) return;
 
                 const status = notesModalStatus.value;
-                const reason = notesModalTextarea.value.trim();
+                const text = notesModalTextarea.value.trim();
 
                 notesModalSaveButton.disabled = true;
                 notesModalSaveButton.textContent = 'Sauvegarde...';
 
                 let success = false;
                 if (status === 'Lost') {
-                    success = await this.updateProspectStatusAndFlags('Lost', this.state.isR1Completed, false, reason);
+                    const newComments = (this.state.comments ? this.state.comments + '\n\n' : '') + `NOTE (Refus R2): ${text}`;
+                    success = await this.updateProspectStatusAndFlags('Lost', this.state.isR1Completed, false, "", true, newComments);
                 } else if (status === 'Waiting') {
-                    success = await this.updateProspectStatusAndFlags('Waiting', this.state.isR1Completed, this.state.isR2Completed, reason);
+                    success = await this.updateProspectStatusAndFlags('Waiting', this.state.isR1Completed, this.state.isR2Completed, text);
                 }
 
                 if (success) {
@@ -478,6 +490,7 @@
                         this.state.context.douleur = Array.isArray(this.state.context.douleur) ? this.state.context.douleur : [];
                         this.state.context.style = Array.isArray(this.state.context.style) ? this.state.context.style : [];
                         this.state.customNotes = data.customNotes || '';
+                        this.state.comments = data.comments || '';
                         this.state.lostReason = data.lostReason || '';
                         this.state.currentStatus = data.status || 'R1 Scheduled';
                         this.state.isR1Completed = data.isR1Completed || false;
