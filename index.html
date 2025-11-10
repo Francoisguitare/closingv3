@@ -191,14 +191,14 @@
         <!-- Table Détails -->
         <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 overflow-x-auto">
              <h2 class="text-xl font-semibold text-gray-300 mb-3 sticky top-0 bg-slate-800/90 py-2 z-20 backdrop-blur-sm">Détails des Prospects</h2>
-             <table class="w-full divide-y divide-slate-700 table-fixed">
+             <table class="w-full divide-y divide-slate-700">
                 <thead class="sticky top-[2.75rem] z-10">
                     <tr>
-                        <th class="w-[9%]">Date R1</th>
-                        <th class="w-[14%]">Prospect</th>
-                        <th class="w-[9%]">Statut Qualif.</th>
-                        <th class="w-[6%] text-center">Score</th>
-                        <th class="w-[7%] text-center">
+                        <th class="whitespace-nowrap">Date R1</th>
+                        <th>Prospect</th>
+                        <th class="whitespace-nowrap">Statut Qualif.</th>
+                        <th class="text-center">Score</th>
+                        <th class="text-center whitespace-nowrap">
                             <div class="tooltip-container">
                                 Pré-Qualif
                                 <span class="tooltip-text !w-[22rem] !-ml-[11rem] text-xs">
@@ -210,12 +210,12 @@
                                 </span>
                             </div>
                         </th>
-                        <th class="w-[10%]">Statut</th>
-                        <th class="w-[9%]">Date R2</th>
-                        <th class="w-[9%]">Date Relance</th>
-                        <th class="w-[8%]">Note</th>
-                        <th class="w-[8%] text-right">Montant Total</th>
-                        <th class="w-[11%] text-center">Actions</th>
+                        <th>Statut</th>
+                        <th class="whitespace-nowrap">Date R2</th>
+                        <th class="whitespace-nowrap">Date Relance</th>
+                        <th>Note</th>
+                        <th class="text-right whitespace-nowrap">Montant Total</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="detailsTableBody" class="bg-slate-800 divide-y divide-slate-700"></tbody>
@@ -754,7 +754,7 @@
                      <td class="whitespace-nowrap text-sm text-gray-200">${relaunchDate}</td>
                      <td class="whitespace-nowrap text-sm">${pA_display}</td>
                      <td class="whitespace-nowrap text-sm text-gray-200 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
-                     <td class="text-sm text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
+                     <td class="whitespace-nowrap text-sm text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
                  </tr>`;
              }).join('');
          }
