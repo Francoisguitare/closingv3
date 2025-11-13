@@ -11,13 +11,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Gemini SDK -->
-    <script type="module">
-        import { GoogleGenAI, Type } from "https://esm.run/@google/genai";
-        window.GoogleGenAI = GoogleGenAI;
-        window.GenaiType = Type;
-    </script>
-    
     <!-- SDK Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -61,15 +54,6 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 10px; border: 2px solid #1f2937; }
         #appFeedback { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); padding: 0.75rem 1.25rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); color: white; font-weight: 600; font-size: 0.875rem; z-index: 50; transition: opacity 300ms ease-in-out; opacity: 0; pointer-events: none; }
         #appFeedback.show { opacity: 1; pointer-events: auto; }
-        
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner {
-            width: 1.25rem; height: 1.25rem;
-            border: 2px solid #475569;
-            border-top-color: #38bdf8;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
     </style>
 
 </head>
@@ -82,7 +66,7 @@
             <p>Chargement du prospect...</p>
         </div>
         
-        <!-- ÉCRAN PRINCIPAL (refonte) -->
+        <!-- ÉCRAN PRINCIPAL -->
         <div id="mainScreen" class="hidden h-full p-4 md:p-6 w-full max-w-7xl mx-auto flex flex-col">
             <!-- Header -->
             <div class="flex justify-between items-center mb-4 flex-shrink-0">
@@ -90,57 +74,29 @@
                 <a href="./index.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 text-sm rounded-lg transition-colors duration-200">&larr; Retour Dashboard</a>
             </div>
 
-            <!-- Contenu Principal (Notepad + AI) -->
+            <!-- Contenu Principal (Notes + Pourquoi) -->
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-grow overflow-hidden min-h-0">
-                <!-- Colonne Gauche: Notepad -->
+                <!-- Colonne Gauche: Prise de notes -->
                 <div class="lg:col-span-3 h-full flex flex-col bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
                     <label for="notesTextarea" class="text-lg font-semibold text-teal-300 mb-3">Prise de notes en direct</label>
                     <textarea id="notesTextarea" class="w-full h-full bg-slate-900 border border-slate-600 rounded-lg py-3 px-4 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 flex-grow custom-scrollbar" placeholder="Écrivez ici la situation actuelle du prospect, ses objectifs, ses frustrations..."></textarea>
-                    <button id="analyzeButton" class="w-full mt-4 text-lg font-bold py-3 px-5 rounded-lg transition-all duration-300 shadow-lg bg-teal-600 hover:bg-teal-500 text-white shadow-teal-800/40 flex items-center justify-center gap-2 disabled:bg-slate-500 disabled:cursor-wait">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.543L16.5 21.75l-.398-1.207a3.375 3.375 0 00-2.455-2.456L12.75 18l1.207-.398a3.375 3.375 0 002.455-2.456L16.5 14.25l.398 1.207a3.375 3.375 0 002.456 2.456L20.25 18l-1.207.398a3.375 3.375 0 00-2.456 2.456z" /></svg>
-                        <span id="analyzeButtonText">Analyser & Suggérer des Questions</span>
-                        <div id="analyzeButtonSpinner" class="spinner hidden"></div>
-                    </button>
                 </div>
 
-                <!-- Colonne Droite: AI Assistant -->
-                <div id="aiAssistantPanel" class="lg:col-span-2 h-full flex flex-col bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg overflow-hidden">
-                    <h3 class="text-lg font-semibold text-sky-300 mb-3 flex-shrink-0">Assistant IA</h3>
-                    <div id="aiContent" class="space-y-5 overflow-y-auto custom-scrollbar flex-grow">
-                        <!-- Contenu généré par l'IA -->
-                         <div id="aiPlaceholder" class="text-center text-gray-400 pt-8">
-                            <svg class="w-12 h-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.311a15.045 15.045 0 01-7.5 0C4.508 17.627 2.25 14.454 2.25 10.875c0-1.633.375-3.172 1.05-4.575a15.048 15.048 0 0113.425 0c.675 1.403 1.05 2.942 1.05 4.575 0 3.579-2.258 6.752-5.25 7.478z" /></svg>
-                            <p>Cliquez sur "Analyser" après avoir pris des notes pour recevoir des suggestions.</p>
+                <!-- Colonne Droite: Les 3 Pourquoi -->
+                <div class="lg:col-span-2 h-full flex flex-col bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
+                    <h3 class="text-lg font-semibold text-sky-300 mb-3 flex-shrink-0">Les 3 Pourquoi</h3>
+                    <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow pr-2">
+                        <div>
+                            <label for="why1Textarea" class="block text-sm font-medium text-slate-400 mb-1">Pourquoi #1 (La Surface)</label>
+                            <textarea id="why1Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="La raison initiale, logique..."></textarea>
                         </div>
-                        <div id="aiResult" class="hidden">
-                            <!-- Résumé de la situation -->
-                            <div>
-                                <h4 class="font-semibold text-gray-200 mb-2">Résumé de la Situation</h4>
-                                <p id="summaryContent" class="text-gray-300 bg-slate-900/50 p-3 rounded-md"></p>
-                            </div>
-                            <!-- Les 3 Pourquoi -->
-                             <div>
-                                <h4 class="font-semibold text-gray-200 mb-2">Les 3 Pourquoi</h4>
-                                <div class="space-y-2">
-                                    <div class="bg-slate-900/50 p-3 rounded-md">
-                                        <p class="text-sm font-medium text-slate-400">Pourquoi #1 (La Surface)</p>
-                                        <p id="why1Content" class="text-gray-300"></p>
-                                    </div>
-                                    <div class="bg-slate-900/50 p-3 rounded-md">
-                                        <p class="text-sm font-medium text-slate-400">Pourquoi #2 (L'Émotion)</p>
-                                        <p id="why2Content" class="text-gray-300"></p>
-                                    </div>
-                                    <div class="bg-slate-900/50 p-3 rounded-md">
-                                        <p class="text-sm font-medium text-slate-400">Pourquoi #3 (L'Identité)</p>
-                                        <p id="why3Content" class="text-gray-300"></p>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Questions suggérées -->
-                            <div>
-                                <h4 class="font-semibold text-gray-200 mb-2">Questions Suggérées pour Approfondir</h4>
-                                <ul id="questionsList" class="list-disc list-inside space-y-2 text-gray-300"></ul>
-                            </div>
+                        <div>
+                            <label for="why2Textarea" class="block text-sm font-medium text-slate-400 mb-1">Pourquoi #2 (L'Émotion)</label>
+                            <textarea id="why2Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="Le sentiment, la frustration cachée..."></textarea>
+                        </div>
+                        <div>
+                            <label for="why3Textarea" class="block text-sm font-medium text-slate-400 mb-1">Pourquoi #3 (L'Identité)</label>
+                            <textarea id="why3Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="L'impact sur sa vision de lui-même..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -169,7 +125,10 @@
             const loadingScreen = document.getElementById('loadingScreen');
             const prospectNameEl = document.getElementById('mainProspectName');
             const notesTextarea = document.getElementById('notesTextarea');
-            const analyzeButton = document.getElementById('analyzeButton');
+            const why1Textarea = document.getElementById('why1Textarea');
+            const why2Textarea = document.getElementById('why2Textarea');
+            const why3Textarea = document.getElementById('why3Textarea');
+
             let isSaving = false;
             let debounceTimer;
 
@@ -196,7 +155,10 @@
                 if (docSnap.exists()) {
                     const docData = docSnap.data();
                     prospectNameEl.textContent = docData.prospectName || 'Prospect inconnu';
-                    notesTextarea.value = docData.notes || ''; // Directly load notes
+                    notesTextarea.value = docData.notes || '';
+                    why1Textarea.value = docData.why1 || '';
+                    why2Textarea.value = docData.why2 || '';
+                    why3Textarea.value = docData.why3 || '';
                     
                     mainScreen.classList.remove('hidden');
                     loadingScreen.classList.add('hidden');
@@ -212,8 +174,8 @@
                 loadingScreen.classList.add('hidden');
             }
 
-            // --- AUTO-SAVE NOTES ---
-            notesTextarea.addEventListener('input', () => {
+            // --- AUTO-SAVE NOTES & WHYS ---
+            const autoSaveChanges = () => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(async () => {
                     if (isSaving) return;
@@ -222,122 +184,25 @@
                         const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
                         await updateDoc(docRef, {
                             notes: notesTextarea.value,
+                            why1: why1Textarea.value,
+                            why2: why2Textarea.value,
+                            why3: why3Textarea.value,
                             lastUpdatedAt: Timestamp.now()
                         });
-                        console.log("Notes saved automatically.");
+                        console.log("Notes and Whys saved automatically.");
                     } catch (error) {
                         console.error("Auto-save error:", error);
-                        showAppFeedback("Erreur de sauvegarde automatique des notes.", true);
+                        showAppFeedback("Erreur de sauvegarde automatique.", true);
                     } finally {
                         isSaving = false;
                     }
                 }, 1500); // 1.5 second debounce
-            });
+            };
 
-            // --- AI ANALYSIS ---
-            analyzeButton.addEventListener('click', async () => {
-                const notes = notesTextarea.value;
-                if (!notes.trim()) {
-                    showAppFeedback("Veuillez écrire des notes avant d'analyser.", true);
-                    return;
-                }
-
-                const analyzeButtonText = document.getElementById('analyzeButtonText');
-                const analyzeButtonSpinner = document.getElementById('analyzeButtonSpinner');
-                const aiPlaceholder = document.getElementById('aiPlaceholder');
-                const aiResult = document.getElementById('aiResult');
-
-                analyzeButton.disabled = true;
-                analyzeButtonText.textContent = "Analyse en cours...";
-                analyzeButtonSpinner.classList.remove('hidden');
-                aiResult.classList.add('hidden');
-                aiPlaceholder.classList.add('hidden');
-
-                try {
-                    if (!process.env.API_KEY) {
-                        throw new Error("La clé API n'est pas configurée.");
-                    }
-                    const ai = new window.GoogleGenAI({ apiKey: process.env.API_KEY });
-                    const model = 'gemini-2.5-flash';
-
-                    const schema = {
-                        type: window.GenaiType.OBJECT,
-                        properties: {
-                            summary: { type: window.GenaiType.STRING, description: "Un résumé concis de la situation du prospect en 2-3 phrases." },
-                            why1: { type: window.GenaiType.STRING, description: "Le 'Pourquoi' de surface. La raison initiale et logique qu'il donne." },
-                            why2: { type: window.GenaiType.STRING, description: "Le 'Pourquoi' émotionnel. Le sentiment ou la frustration cachée derrière la raison de surface." },
-                            why3: { type: window.GenaiType.STRING, description: "Le 'Pourquoi' identitaire. Comment la solution impacterait sa vision de lui-même, son identité." },
-                            questions: {
-                                type: window.GenaiType.ARRAY,
-                                description: "3 questions ouvertes et pertinentes pour creuser et découvrir les 'pourquoi' manquants ou plus profonds.",
-                                items: { type: window.GenaiType.STRING }
-                            }
-                        },
-                        required: ["summary", "why1", "why2", "why3", "questions"]
-                    };
-
-                    const prompt = `Analyse les notes suivantes prises lors d'un entretien de vente pour une formation de guitare. Identifie la situation, les objectifs et les motivations du prospect. Extrais les "3 niveaux de pourquoi" et suggère des questions pour approfondir.
-
-                    Notes du prospect:
-                    ---
-                    ${notes}
-                    ---
-                    
-                    Fournis une réponse structurée au format JSON. Si un "Pourquoi" n'est pas clair dans les notes, indique "Pas encore clair".`;
-                    
-                    const response = await ai.models.generateContent({
-                        model,
-                        contents: prompt,
-                        config: {
-                            responseMimeType: "application/json",
-                            responseSchema: schema,
-                        },
-                    });
-                    
-                    let jsonString = response.text;
-                    if (!jsonString || jsonString.trim() === '') {
-                        throw new Error("La réponse de l'IA est vide. Le contenu a peut-être été bloqué.");
-                    }
-
-                    // Nettoyer le formatage Markdown potentiel que l'IA peut ajouter
-                    jsonString = jsonString.trim();
-                    if (jsonString.startsWith("```json")) {
-                        jsonString = jsonString.slice(7, -3).trim();
-                    } else if (jsonString.startsWith("```")) {
-                        jsonString = jsonString.slice(3, -3).trim();
-                    }
-
-                    const result = JSON.parse(jsonString);
-
-                    document.getElementById('summaryContent').textContent = result.summary || "N/A";
-                    document.getElementById('why1Content').textContent = result.why1 || "N/A";
-                    document.getElementById('why2Content').textContent = result.why2 || "N/A";
-                    document.getElementById('why3Content').textContent = result.why3 || "N/A";
-                    
-                    const questionsList = document.getElementById('questionsList');
-                    questionsList.innerHTML = '';
-                    if (result.questions && result.questions.length > 0) {
-                        result.questions.forEach(q => {
-                            const li = document.createElement('li');
-                            li.textContent = q;
-                            questionsList.appendChild(li);
-                        });
-                    } else {
-                        questionsList.innerHTML = '<li>Aucune question suggérée.</li>';
-                    }
-
-                    aiResult.classList.remove('hidden');
-
-                } catch (error) {
-                    console.error("Error with Gemini API:", error);
-                    showAppFeedback("Erreur lors de l'analyse par l'IA.", true);
-                    aiPlaceholder.classList.remove('hidden');
-                } finally {
-                    analyzeButton.disabled = false;
-                    analyzeButtonText.textContent = "Analyser & Suggérer des Questions";
-                    analyzeButtonSpinner.classList.add('hidden');
-                }
-            });
+            notesTextarea.addEventListener('input', autoSaveChanges);
+            why1Textarea.addEventListener('input', autoSaveChanges);
+            why2Textarea.addEventListener('input', autoSaveChanges);
+            why3Textarea.addEventListener('input', autoSaveChanges);
         })();
     </script>
 </body>
