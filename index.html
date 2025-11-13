@@ -51,8 +51,8 @@
             .date-shortcut.active, .view-toggle.active { @apply bg-blue-600 text-white; }
             .date-shortcut:disabled, .view-toggle:disabled { @apply opacity-40 cursor-not-allowed; }
             
-            th { @apply px-3 py-1 bg-slate-800 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
-            td { @apply px-3 py-0 text-sm text-gray-200 border-b border-slate-700; }
+            th { @apply px-3 py-3 bg-slate-800 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
+            td { @apply px-3 py-2 text-sm text-gray-200 border-b border-slate-700; }
             tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
             tr:last-child td { @apply border-b-0; }
             
@@ -102,7 +102,7 @@
 
             /* Select pour le statut dans le tableau */
             .status-select {
-                @apply w-full bg-slate-700 border-0 rounded-md py-1 px-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-teal-400;
+                @apply w-full bg-slate-700 border border-slate-600 rounded-md py-1 px-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-teal-400;
             }
         }
     </style>

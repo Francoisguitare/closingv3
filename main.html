@@ -67,37 +67,55 @@
         </div>
         
         <!-- ÉCRAN PRINCIPAL -->
-        <div id="mainScreen" class="hidden h-full p-4 md:p-6 w-full max-w-7xl mx-auto flex flex-col">
+        <div id="mainScreen" class="hidden h-full p-4 md:p-6 w-full max-w-4xl mx-auto flex flex-col">
             <!-- Header -->
-            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+            <header class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h2 class="text-2xl font-semibold text-gray-300">Analyse R1: <span id="mainProspectName" class="text-white font-bold"></span></h2>
-                <a href="./index.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 text-sm rounded-lg transition-colors duration-200">&larr; Retour Dashboard</a>
-            </div>
-
-            <!-- Contenu Principal (Notes + Pourquoi) -->
-            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-grow overflow-hidden min-h-0">
-                <!-- Colonne Gauche: Prise de notes -->
-                <div class="lg:col-span-3 h-full flex flex-col bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
-                    <label for="notesTextarea" class="text-lg font-semibold text-teal-300 mb-3">Prise de notes en direct</label>
-                    <textarea id="notesTextarea" class="w-full h-full bg-slate-900 border border-slate-600 rounded-lg py-3 px-4 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 flex-grow custom-scrollbar" placeholder="Écrivez ici la situation actuelle du prospect, ses objectifs, ses frustrations..."></textarea>
+                <div class="flex items-center space-x-3">
+                    <button id="saveButton" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 text-sm rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-wait">
+                        Sauvegarder
+                    </button>
+                    <a href="./index.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 text-sm rounded-lg transition-colors duration-200">&larr; Retour Dashboard</a>
                 </div>
+            </header>
 
-                <!-- Colonne Droite: Les 3 Pourquoi -->
-                <div class="lg:col-span-2 h-full flex flex-col bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
-                    <h3 class="text-lg font-semibold text-sky-300 mb-3 flex-shrink-0">Les 3 Pourquoi</h3>
-                    <div class="space-y-4 overflow-y-auto custom-scrollbar flex-grow pr-2">
-                        <div>
-                            <label for="why1Textarea" class="block text-sm font-medium text-slate-400 mb-1">Pourquoi #1 (La Surface)</label>
-                            <textarea id="why1Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="La raison initiale, logique..."></textarea>
-                        </div>
-                        <div>
-                            <label for="why2Textarea" class="block text-sm font-medium text-slate-400 mb-1">Pourquoi #2 (L'Émotion)</label>
-                            <textarea id="why2Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="Le sentiment, la frustration cachée..."></textarea>
-                        </div>
-                        <div>
-                            <label for="why3Textarea" class="block text-sm font-medium text-slate-400 mb-1">Pourquoi #3 (L'Identité)</label>
-                            <textarea id="why3Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="L'impact sur sa vision de lui-même..."></textarea>
-                        </div>
+            <!-- Contenu Principal (Flux de conversation) -->
+            <div class="flex-grow overflow-y-auto custom-scrollbar pr-4 -mr-4">
+                <div class="space-y-6">
+                    <!-- Étape 1: Situation Actuelle -->
+                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
+                        <label for="notesTextarea" class="text-lg font-semibold text-teal-300 mb-3 block">Situation Actuelle</label>
+                        <textarea id="notesTextarea" rows="8" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-3 px-4 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 custom-scrollbar" placeholder="Décrire la situation présente du prospect, ses frustrations, ce qu'il a déjà essayé..."></textarea>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <svg class="w-8 h-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
+                    </div>
+
+                    <!-- Étape 2: Pourquoi #1 -->
+                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
+                        <label for="why1Textarea" class="text-lg font-semibold text-sky-300 mb-3 block">Objectifs (Pourquoi #1 - La Surface)</label>
+                        <textarea id="why1Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="Quelle est la raison initiale et logique qui le pousse à vouloir changer ? Qu'est-ce qu'il veut accomplir ?"></textarea>
+                    </div>
+                    
+                    <div class="flex justify-center">
+                         <svg class="w-8 h-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
+                    </div>
+
+                    <!-- Étape 3: Pourquoi #2 -->
+                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
+                        <label for="why2Textarea" class="text-lg font-semibold text-sky-300 mb-3 block">L'Émotion (Pourquoi #2)</label>
+                        <textarea id="why2Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="Quel est le sentiment, la frustration cachée derrière l'objectif ? Qu'est-ce que ça lui fait de ne pas y arriver ?"></textarea>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <svg class="w-8 h-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
+                    </div>
+
+                    <!-- Étape 4: Pourquoi #3 -->
+                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
+                        <label for="why3Textarea" class="text-lg font-semibold text-sky-300 mb-3 block">L'Identité (Pourquoi #3)</label>
+                        <textarea id="why3Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="En quoi le fait d'atteindre son objectif impacterait sa vision de lui-même ? Qui deviendrait-il ?"></textarea>
                     </div>
                 </div>
             </div>
@@ -128,9 +146,7 @@
             const why1Textarea = document.getElementById('why1Textarea');
             const why2Textarea = document.getElementById('why2Textarea');
             const why3Textarea = document.getElementById('why3Textarea');
-
-            let isSaving = false;
-            let debounceTimer;
+            const saveButton = document.getElementById('saveButton');
 
             if (!docId) {
                 showAppFeedback("ID de prospect manquant dans l'URL.", true);
@@ -165,44 +181,46 @@
                 } else {
                     showAppFeedback("Erreur: Prospect non trouvé.", true);
                     prospectNameEl.textContent = "Erreur";
+                    mainScreen.classList.remove('hidden');
                     loadingScreen.classList.add('hidden');
                 }
             } catch (error) {
                 console.error("Error loading prospect data: ", error);
                 showAppFeedback("Erreur de chargement des données du prospect.", true);
                 prospectNameEl.textContent = "Erreur de chargement";
+                mainScreen.classList.remove('hidden');
                 loadingScreen.classList.add('hidden');
             }
 
-            // --- AUTO-SAVE NOTES & WHYS ---
-            const autoSaveChanges = () => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(async () => {
-                    if (isSaving) return;
-                    isSaving = true;
-                    try {
-                        const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
-                        await updateDoc(docRef, {
-                            notes: notesTextarea.value,
-                            why1: why1Textarea.value,
-                            why2: why2Textarea.value,
-                            why3: why3Textarea.value,
-                            lastUpdatedAt: Timestamp.now()
-                        });
-                        console.log("Notes and Whys saved automatically.");
-                    } catch (error) {
-                        console.error("Auto-save error:", error);
-                        showAppFeedback("Erreur de sauvegarde automatique.", true);
-                    } finally {
-                        isSaving = false;
-                    }
-                }, 1500); // 1.5 second debounce
+            // --- MANUAL SAVE ---
+            const saveManualChanges = async () => {
+                if (!saveButton) return;
+
+                saveButton.disabled = true;
+                saveButton.textContent = 'Sauvegarde...';
+
+                try {
+                    const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
+                    await updateDoc(docRef, {
+                        notes: notesTextarea.value,
+                        why1: why1Textarea.value,
+                        why2: why2Textarea.value,
+                        why3: why3Textarea.value,
+                        lastUpdatedAt: Timestamp.now()
+                    });
+                    showAppFeedback("Modifications enregistrées.", false);
+                } catch (error) {
+                    console.error("Manual save error:", error);
+                    showAppFeedback("Erreur de sauvegarde.", true);
+                } finally {
+                    saveButton.disabled = false;
+                    saveButton.textContent = 'Sauvegarder';
+                }
             };
 
-            notesTextarea.addEventListener('input', autoSaveChanges);
-            why1Textarea.addEventListener('input', autoSaveChanges);
-            why2Textarea.addEventListener('input', autoSaveChanges);
-            why3Textarea.addEventListener('input', autoSaveChanges);
+            if (saveButton) {
+                saveButton.addEventListener('click', saveManualChanges);
+            }
         })();
     </script>
 </body>
