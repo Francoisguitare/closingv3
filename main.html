@@ -72,6 +72,7 @@
             <header class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h2 class="text-2xl font-semibold text-gray-300">Analyse R1: <span id="mainProspectName" class="text-white font-bold"></span></h2>
                 <div class="flex items-center space-x-3">
+                    <span id="autosaveStatus" class="text-sm text-gray-400 transition-opacity duration-500 opacity-0 mr-2"></span>
                     <a href="./index.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 text-sm rounded-lg transition-colors duration-200">
                         Annuler
                     </a>
@@ -137,6 +138,16 @@
             setTimeout(() => { feedbackEl.className = 'opacity-0'; }, 3000);
         }
 
+        function debounce(func, delay = 1500) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    func.apply(this, args);
+                }, delay);
+            };
+        }
+
         (async () => {
             const params = new URLSearchParams(window.location.search);
             const docId = params.get('docId');
@@ -149,6 +160,7 @@
             const why2Textarea = document.getElementById('why2Textarea');
             const why3Textarea = document.getElementById('why3Textarea');
             const saveButton = document.getElementById('saveAndQuitButton');
+            const autosaveStatusEl = document.getElementById('autosaveStatus');
 
             if (!docId) {
                 showAppFeedback("ID de prospect manquant dans l'URL.", true);
@@ -194,12 +206,13 @@
                 loadingScreen.classList.add('hidden');
             }
 
-            // --- SAVE & QUIT ---
-            const saveAndQuit = async () => {
-                if (!saveButton) return;
-
-                saveButton.disabled = true;
-                saveButton.textContent = 'Sauvegarde...';
+            // --- AUTOSAVE LOGIC ---
+            let isSavingAutosave = false;
+            const performAutosave = async () => {
+                if (isSavingAutosave) return;
+                isSavingAutosave = true;
+                autosaveStatusEl.textContent = 'Sauvegarde...';
+                autosaveStatusEl.classList.remove('opacity-0', 'text-red-400');
 
                 try {
                     const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
@@ -210,10 +223,41 @@
                         why3: why3Textarea.value,
                         lastUpdatedAt: Timestamp.now()
                     });
+                    autosaveStatusEl.textContent = 'Enregistré';
+                    setTimeout(() => autosaveStatusEl.classList.add('opacity-0'), 2000);
+                } catch (error) {
+                    console.error("Autosave error:", error);
+                    autosaveStatusEl.textContent = 'Erreur sauvegarde';
+                    autosaveStatusEl.classList.add('text-red-400');
+                    setTimeout(() => {
+                        autosaveStatusEl.classList.add('opacity-0');
+                        autosaveStatusEl.classList.remove('text-red-400');
+                    }, 3000);
+                } finally {
+                    isSavingAutosave = false;
+                }
+            };
+
+            const debouncedAutosave = debounce(performAutosave, 1500);
+            notesTextarea.addEventListener('input', debouncedAutosave);
+            why1Textarea.addEventListener('input', debouncedAutosave);
+            why2Textarea.addEventListener('input', debouncedAutosave);
+            why3Textarea.addEventListener('input', debouncedAutosave);
+
+            // --- SAVE & QUIT ---
+            const saveAndQuit = async () => {
+                if (!saveButton) return;
+
+                saveButton.disabled = true;
+                saveButton.textContent = 'Sauvegarde...';
+
+                try {
+                    // Perform a final, non-debounced save
+                    await performAutosave();
                     showAppFeedback("Modifications enregistrées.", false);
                     setTimeout(() => {
                         window.location.href = './index.html';
-                    }, 1000); // Delay for user to see feedback
+                    }, 500); // Shorter delay as autosave already ran
                 } catch (error) {
                     console.error("Save and quit error:", error);
                     showAppFeedback("Erreur de sauvegarde.", true);

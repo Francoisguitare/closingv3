@@ -66,9 +66,9 @@
             .custom-checkbox {
                 @apply w-5 h-5 rounded border-2 border-slate-500 bg-slate-700 text-teal-500 shadow-sm focus:ring-teal-400 focus:ring-offset-slate-800 cursor-pointer;
             }
-            .custom-checkbox:disabled {
-                opacity: 0.5;
-                cursor: pointer !important;
+            .custom-checkbox.checkbox-loading {
+                @apply opacity-50;
+                cursor: wait; /* Utilise le curseur d'attente au lieu de bloquer */
             }
 
             /* Tooltip customisé */
@@ -1107,22 +1107,23 @@
                     dTU.paymentType=deleteField();dTU.amountCollected=deleteField();dTU.installmentAmount=deleteField();dTU.numberOfInstallments=deleteField();dTU.startDateOfPayment=deleteField();
                  }
                  
-                 await updateDoc(dR,dTU);
-                 closeEditModal();
-                 
-                 const docIndex = currentData.findIndex(item => item.id === dId);
-                 if (docIndex > -1) { 
-                     const oldData = currentData[docIndex];
-                     const updatedData = { ...oldData, ...dTU };
-
-                     Object.keys(dTU).forEach(key => {
-                         if (dTU[key] && typeof dTU[key] === 'object' && dTU[key]._doNotReadJustReturnUndefined === true) {
-                             delete updatedData[key];
-                         }
-                     });
-                     currentData[docIndex] = updatedData;
-                 }
-                 renderFilteredData(); 
+                await updateDoc(dR,dTU);
+                closeEditModal();
+                
+                const docIndex = currentData.findIndex(item => item.id === dId);
+                if (docIndex > -1) { 
+                    const updatedProspect = { ...currentData[docIndex] };
+                    Object.keys(dTU).forEach(key => {
+                        const value = dTU[key];
+                        if (value && typeof value === 'object' && value._doNotReadJustReturnUndefined === true) {
+                            delete updatedProspect[key];
+                        } else {
+                            updatedProspect[key] = value;
+                        }
+                    });
+                    currentData[docIndex] = updatedProspect;
+                }
+                renderFilteredData(); 
              } catch(error){ console.error("Err update:",error); mE.textContent=error.message || "Erreur sauvegarde."; }
              finally { sB.disabled=false; sB.textContent='Enregistrer'; }
         }
@@ -1219,7 +1220,8 @@
             const action = checkbox.dataset.action;
             const isChecked = checkbox.checked;
 
-            checkbox.disabled = true;
+            checkbox.classList.add('checkbox-loading');
+            checkbox.disabled = true; // Empêche les double-clics pendant la sauvegarde
 
             try {
                 const prospectIndex = currentData.findIndex(p => p.id === docId);
@@ -1289,7 +1291,7 @@
                 // Rétablir l'état visuel en cas d'erreur
                 checkbox.checked = !isChecked; 
             } finally {
-                checkbox.disabled = false;
+                // La réactivation se fait par le re-rendu de la table, pas besoin de réactiver manuellement ici
             }
         }
 
