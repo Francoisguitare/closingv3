@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="fr" class="h-full">
 <head>
@@ -315,7 +314,7 @@
         function formatFirebaseTimestamp(timestamp) { if (!timestamp || typeof timestamp.toDate !== 'function') return 'N/A'; try { return timestamp.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return 'Date invalide'; } }
         function formatDateToDDMM(dateString) { if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) { return dateString || '-'; } const parts = dateString.split('-'); return `${parts[2]}/${parts[1]}`; }
         async function initFirebase() { try { const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" }; appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; const app = initializeApp(fC); db = getFirestore(app); auth = getAuth(app); return new Promise((resolve) => { onAuthStateChanged(auth, async (user) => { if (user) { resolve(); } else { try { await signInAnonymously(auth); resolve(); } catch (e){ console.error("Err anon:", e); resolve(); }} }); }); } catch (error) { console.error("Erreur init Firebase:", error); displayError("Erreur connexion DB."); return Promise.reject(error); } }
-        const safeSet = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; else console.warn(`Element KPI non trouvé: #${id}`); };
+        const safeSet = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
         function updateTargetColor(targetId, kpiValue) {
             const targetEl = document.getElementById(targetId);
             if (!targetEl) return;
@@ -537,7 +536,6 @@
             safeSet('kpiR1PlanToClosedRate', `${r1PlanToClosedRate.toFixed(1)}%`);
             safeSet('kpiR1PlanToClosedCount', `(${closedCountForCohort})`); // Utilise le compte du cohort
             safeSet('kpiCashCollected', `${cashCollectedInPeriod.toLocaleString('fr-FR')}€`);
-            safeSet('kpiCashFutureRecurring', `${cashFutureRecurring.toLocaleString('fr-FR')}€`);
 
             updateTargetColor('kpi-target-r1-noshow', noShowR1Rate);
             updateTargetColor('kpi-target-r1-to-r2', r1ToR2Rate);
@@ -702,7 +700,9 @@
              if(!tB) return;
              if(data.length===0){tB.innerHTML=`<tr><td colspan="11" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
              tB.innerHTML = data.map(i => {
-                 const sV = i.status || 'R1 Scheduled'; const sC = getStatusClass(sV);
+                 const isOldSystem = !!i.scores;
+                 const sV = i.status || 'R1 Scheduled'; 
+                 const sC = getStatusClass(sV);
                  const pA_text = i.comments || i.proposedAmount || '';
                  let pA_display;
                  if (pA_text) {
@@ -749,20 +749,31 @@
                  }
                  const prequalCellHTML = `<div class="tooltip-container"><button class="${prequalBtnClasses}" data-doc-id="${i.id}" data-status="${prequalStatus}">${prequalIcon}</button><span class="tooltip-text !w-60 !-ml-32">${prequalTooltip}</span></div>`;
 
-                 let aB; if(sV==='R1 Scheduled'){aB=`<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;} else {aB=`<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Détails</a>`;}
+                 let detailsButton, editButton;
+                 if (isOldSystem) {
+                    detailsButton = `<span class="text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded cursor-not-allowed" title="Ancienne fiche, non modifiable.">Détails</span>`;
+                    editButton = `<span class="text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded cursor-not-allowed" title="Ancienne fiche, non modifiable.">Modifier</span>`;
+                 } else {
+                    if (sV === 'R1 Scheduled') {
+                        detailsButton = `<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;
+                    } else {
+                        detailsButton = `<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Détails</a>`;
+                    }
+                    editButton = `<button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Modifier</button>`;
+                 }
                  
                  return `<tr>
                      <td class="whitespace-nowrap text-sm text-gray-200">${dTD}</td>
                      <td class="text-sm text-gray-200 truncate max-w-xs">${pN}</td>
                      <td class="whitespace-nowrap text-sm"><span class="${qC}">${qST}</span></td>
-                     <td class="whitespace-nowrap text-sm text-gray-200 text-center">${i.scores?.total??'N/A'}</td>
+                     <td class="whitespace-nowrap text-sm text-gray-200 text-center">${i.scores?.total??'-'}</td>
                      <td class="whitespace-nowrap text-sm text-center">${prequalCellHTML}</td>
                      <td class="whitespace-nowrap text-sm"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente').replace('Disqualified', 'Disqualifié')}</span></td>
                      <td class="whitespace-nowrap text-sm text-gray-200">${dTD_R2}</td>
                      <td class="whitespace-nowrap text-sm text-gray-200">${relaunchDate}</td>
                      <td class="whitespace-nowrap text-sm">${pA_display}</td>
                      <td class="whitespace-nowrap text-sm text-gray-200 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
-                     <td class="whitespace-nowrap text-sm text-center space-x-2"> ${aB} <button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Modifier</button> <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
+                     <td class="whitespace-nowrap text-sm text-center space-x-2">${detailsButton} ${editButton} <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
                  </tr>`;
              }).join('');
          }
@@ -778,7 +789,6 @@
             safeSet('kpiR2toClosedRate', '0%');
             safeSet('kpiR1PlanToClosedRate', '0%');
             safeSet('kpiCashCollected', '0€');
-            safeSet('kpiCashFutureRecurring', '0€');
             safeSet('kpiWaitingCount', '0');
         }
         
@@ -985,7 +995,7 @@
              relaunchDateContainer.classList.toggle('hidden', !showRelaunch); 
              if(statusContainer) statusContainer.classList.toggle('sm:col-span-2', !showRelaunch);
              
-             document.getElementById('modalNote').value = pD.comments || pD.proposedAmount || '';
+             document.getElementById('modalNote').value = pD.comments || pD.notes || '';
              
              const pT=pD.paymentType||'unique'; 
              document.getElementById('modalPaymentType').value = pT; 
@@ -1027,7 +1037,8 @@
                      isR1Completed: nS === 'No Show R1' ? false : isR1,
                      isR2Completed: isR2,
                      isClosed: isClosed,
-                     comments: document.getElementById('modalNote').value.trim(),
+                     notes: document.getElementById('modalNote').value.trim(),
+                     comments: deleteField(),
                      proposedAmount: deleteField(),
                      lastUpdatedAt:Timestamp.now()
                  };
@@ -1104,26 +1115,28 @@
             try {
                 const collectionPath = `artifacts/${appId}/public/data/r1_closings`;
                 const docRef = doc(db, collectionPath, docId);
-
-                // Mettre à jour le statut et cocher la case R1 Effectué
-                await updateDoc(docRef, {
-                    status: 'R1 Completed',
-                    isR1Completed: true, // Coche la case dans le modal de modification
-                    lastUpdatedAt: Timestamp.now()
-                });
                 
+                // *** FIX: Update status before redirecting ***
+                await updateDoc(docRef, { 
+                    status: 'R1 Completed', 
+                    isR1Completed: true,
+                    lastUpdatedAt: Timestamp.now() 
+                });
+
+                // Update local data for immediate feedback
                 const docIndex = currentData.findIndex(item => item.id === docId);
                 if (docIndex > -1) {
                     currentData[docIndex].status = 'R1 Completed';
                     currentData[docIndex].isR1Completed = true;
                 }
                 
-                window.location.href = `script.html?docId=${docId}`;
+                window.location.href = `main.html?docId=${docId}`;
                 closeStartR1ConfirmModal();
 
             } catch (error) {
                 console.error(`Erreur lors du démarrage du R1 ${docId}:`, error);
                 errorP.textContent = 'Erreur lors de la sauvegarde.';
+            } finally {
                 confirmButton.disabled = false;
                 confirmButton.textContent = 'Présent (Démarrer)';
             }
@@ -1172,10 +1185,17 @@
         function attachListeners() { 
             const tableBody = document.getElementById('detailsTableBody');
             if(tableBody) tableBody.addEventListener('click',(e)=>{ 
-                if(e.target.classList.contains('edit-btn')){ openEditModal(e.target.dataset.docId); } 
-                else if(e.target.classList.contains('delete-btn')){ openDeleteConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); } 
-                else if(e.target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(e.target.dataset.docId, e.target.dataset.prospectName); }
-                else if (e.target.closest('.prequal-status-btn')) { const btn = e.target.closest('.prequal-status-btn'); handlePrequalStatusCycle(btn.dataset.docId, btn.dataset.status); }
+                const target = e.target;
+                const docId = target.dataset.docId;
+                if(target.classList.contains('edit-btn')){ 
+                     const prospect = currentData.find(p => p.id === docId);
+                     if (prospect && !prospect.scores) { // Only open for new system
+                        openEditModal(docId); 
+                     }
+                } 
+                else if(target.classList.contains('delete-btn')){ openDeleteConfirmModal(docId, target.dataset.prospectName); } 
+                else if(target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(docId, target.dataset.prospectName); }
+                else if (target.closest('.prequal-status-btn')) { const btn = target.closest('.prequal-status-btn'); handlePrequalStatusCycle(btn.dataset.docId, btn.dataset.status); }
             }); 
             document.getElementById('modalCancelButton')?.addEventListener('click',closeEditModal);
             document.getElementById('modalSaveButton')?.addEventListener('click',saveModalChanges);
