@@ -294,7 +294,19 @@
                         },
                     });
                     
-                    const jsonString = response.text;
+                    let jsonString = response.text;
+                    if (!jsonString || jsonString.trim() === '') {
+                        throw new Error("La réponse de l'IA est vide. Le contenu a peut-être été bloqué.");
+                    }
+
+                    // Nettoyer le formatage Markdown potentiel que l'IA peut ajouter
+                    jsonString = jsonString.trim();
+                    if (jsonString.startsWith("```json")) {
+                        jsonString = jsonString.slice(7, -3).trim();
+                    } else if (jsonString.startsWith("```")) {
+                        jsonString = jsonString.slice(3, -3).trim();
+                    }
+
                     const result = JSON.parse(jsonString);
 
                     document.getElementById('summaryContent').textContent = result.summary || "N/A";
