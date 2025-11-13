@@ -67,7 +67,8 @@
                 @apply w-5 h-5 rounded border-2 border-slate-500 bg-slate-700 text-teal-500 shadow-sm focus:ring-teal-400 focus:ring-offset-slate-800 cursor-pointer;
             }
             .custom-checkbox:disabled {
-                @apply opacity-50 cursor-pointer;
+                opacity: 0.5;
+                cursor: pointer !important;
             }
 
             /* Tooltip customisé */
@@ -715,7 +716,7 @@
 
              tB.innerHTML = data.map(i => {
                  const isOldSystem = !!i.scores;
-                 const pA_text = i.comments || i.proposedAmount || '';
+                 const pA_text = i.notes || i.comments || '';
                  let pA_display;
                  if (pA_text) {
                      const escaped_text = pA_text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
