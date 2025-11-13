@@ -72,10 +72,12 @@
             <header class="flex justify-between items-center mb-4 flex-shrink-0">
                 <h2 class="text-2xl font-semibold text-gray-300">Analyse R1: <span id="mainProspectName" class="text-white font-bold"></span></h2>
                 <div class="flex items-center space-x-3">
-                    <button id="saveButton" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 text-sm rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-wait">
-                        Sauvegarder
+                    <a href="./index.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 text-sm rounded-lg transition-colors duration-200">
+                        Annuler
+                    </a>
+                    <button id="saveAndQuitButton" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 text-sm rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-wait">
+                        Save & Quitter
                     </button>
-                    <a href="./index.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-3 text-sm rounded-lg transition-colors duration-200">&larr; Retour Dashboard</a>
                 </div>
             </header>
 
@@ -146,7 +148,7 @@
             const why1Textarea = document.getElementById('why1Textarea');
             const why2Textarea = document.getElementById('why2Textarea');
             const why3Textarea = document.getElementById('why3Textarea');
-            const saveButton = document.getElementById('saveButton');
+            const saveButton = document.getElementById('saveAndQuitButton');
 
             if (!docId) {
                 showAppFeedback("ID de prospect manquant dans l'URL.", true);
@@ -192,8 +194,8 @@
                 loadingScreen.classList.add('hidden');
             }
 
-            // --- MANUAL SAVE ---
-            const saveManualChanges = async () => {
+            // --- SAVE & QUIT ---
+            const saveAndQuit = async () => {
                 if (!saveButton) return;
 
                 saveButton.disabled = true;
@@ -209,17 +211,19 @@
                         lastUpdatedAt: Timestamp.now()
                     });
                     showAppFeedback("Modifications enregistrées.", false);
+                    setTimeout(() => {
+                        window.location.href = './index.html';
+                    }, 1000); // Delay for user to see feedback
                 } catch (error) {
-                    console.error("Manual save error:", error);
+                    console.error("Save and quit error:", error);
                     showAppFeedback("Erreur de sauvegarde.", true);
-                } finally {
                     saveButton.disabled = false;
-                    saveButton.textContent = 'Sauvegarder';
+                    saveButton.textContent = 'Save & Quitter';
                 }
             };
 
             if (saveButton) {
-                saveButton.addEventListener('click', saveManualChanges);
+                saveButton.addEventListener('click', saveAndQuit);
             }
         })();
     </script>

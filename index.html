@@ -52,7 +52,7 @@
             .date-shortcut:disabled, .view-toggle:disabled { @apply opacity-40 cursor-not-allowed; }
             
             th { @apply px-3 py-3 bg-slate-800 text-left text-xs font-medium text-gray-300 uppercase tracking-wider sticky top-0 z-10; }
-            td { @apply px-3 py-2 text-sm text-gray-200 border-b border-slate-700; }
+            td { @apply px-3 py-3.5 text-sm text-gray-200 border-b border-slate-700; } /* Increased py */
             tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
             tr:last-child td { @apply border-b-0; }
             
@@ -62,7 +62,7 @@
             .kpi-card-toggle:not(.kpi-chart-active) { @apply opacity-60 hover:opacity-100; }
             .kpi-card-static { @apply bg-slate-800/80 backdrop-blur-sm border border-slate-700 p-3 rounded-lg shadow-lg text-center transition-all duration-300 relative overflow-hidden border-t-2; }
         
-            /* Case à cocher customisée (pour le modal) */
+            /* Case à cocher customisée */
             .custom-checkbox {
                 @apply w-5 h-5 rounded border-2 border-slate-500 bg-slate-700 text-teal-500 shadow-sm focus:ring-teal-400 focus:ring-offset-slate-800 cursor-pointer;
             }
@@ -213,7 +213,10 @@
                                 </span>
                             </div>
                         </th>
-                        <th>Statut</th>
+                        <th class="text-center">R1 Fait</th>
+                        <th class="text-center">R2 Prévu</th>
+                        <th class="text-center">Closé</th>
+                        <th>Statut Final</th>
                         <th>Note</th>
                         <th class="text-right whitespace-nowrap">Montant Total</th>
                         <th class="text-center">Actions</th>
@@ -422,7 +425,7 @@
         async function fetchDataAndDisplay() {
              if (!db || !appId) { displayError("DB non prête."); return; }
              const tableBody = document.getElementById('detailsTableBody');
-             tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
+             tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
              resetKPIs();
              try {
                  const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const querySnapshot = await getDocs(query(collection(db, collectionPath))); currentData = [];
@@ -442,7 +445,7 @@
              } catch (error) { 
                  console.error("Erreur fetch Firestore:", error); 
                  displayError("Erreur chargement données."); 
-                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
+                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
              }
          }
         
@@ -699,24 +702,19 @@
         function updateTable(data) {
              const tB=document.getElementById('detailsTableBody');
              if(!tB) return;
-             if(data.length===0){tB.innerHTML=`<tr><td colspan="7" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
+             if(data.length===0){tB.innerHTML=`<tr><td colspan="10" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
              
-             const statusOptions = [
-                { value: 'R1 Scheduled', text: 'R1 Prévu' },
-                { value: 'No Show R1', text: 'No Show R1' },
-                { value: 'R1 Completed', text: 'R1 Effectué' },
-                { value: 'Disqualified', text: 'Disqualifié' },
+             const finalStatusOptions = [
+                { value: '', text: '---' }, // Default empty option
                 { value: 'Waiting', text: 'En Attente' },
-                { value: 'R2 Scheduled', text: 'R2 Prévu' },
+                { value: 'No Show R1', text: 'No Show R1' },
                 { value: 'No Show R2', text: 'No Show R2' },
-                { value: 'Closed', text: 'Closé' },
-                { value: 'Lost', text: 'Perdu' },
-                { value: 'Other', text: 'Autre' },
+                { value: 'Disqualified', text: 'Disqualifié' },
+                { value: 'Lost', text: 'Perdu' }
              ];
 
              tB.innerHTML = data.map(i => {
                  const isOldSystem = !!i.scores;
-                 const sV = i.status || 'R1 Scheduled'; 
                  const pA_text = i.comments || i.proposedAmount || '';
                  let pA_display;
                  if (pA_text) {
@@ -762,25 +760,39 @@
                     detailsButton = `<span class="text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded cursor-not-allowed" title="Ancienne fiche, non modifiable.">Détails</span>`;
                     editButton = `<span class="text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded cursor-not-allowed" title="Ancienne fiche, non modifiable.">Modifier</span>`;
                  } else {
-                    if (sV === 'R1 Scheduled') {
+                    if (i.status === 'R1 Scheduled') {
                         detailsButton = `<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;
                     } else {
                         detailsButton = `<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Détails</a>`;
                     }
                     editButton = `<button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Modifier</button>`;
                  }
+                 
+                 const isR1Done = i.isR1Completed === true;
+                 const isR2Done = i.isR2Completed === true;
+                 const isClosed = i.isClosed === true;
 
-                 const statusSelectHTML = `
-                    <select class="status-select" data-doc-id="${i.id}" data-original-status="${sV}">
-                        ${statusOptions.map(opt => `<option value="${opt.value}" ${sV === opt.value ? 'selected' : ''}>${opt.text}</option>`).join('')}
+                 const r1CheckboxHTML = `<input type="checkbox" class="custom-checkbox" data-doc-id="${i.id}" data-action="r1_fait" ${isR1Done ? 'checked' : ''}>`;
+                 const r2CheckboxHTML = `<input type="checkbox" class="custom-checkbox" data-doc-id="${i.id}" data-action="r2_prevu" ${isR2Done ? 'checked' : ''}>`;
+                 const closeCheckboxHTML = `<input type="checkbox" class="custom-checkbox" data-doc-id="${i.id}" data-action="close" ${isClosed ? 'checked' : ''}>`;
+                 
+                 const exceptionStatuses = ['Waiting', 'No Show R1', 'No Show R2', 'Disqualified', 'Lost'];
+                 const currentStatusValue = (i.status && exceptionStatuses.includes(i.status)) ? i.status : '';
+
+                 const finalStatusSelectHTML = `
+                    <select class="status-select" data-doc-id="${i.id}" data-original-status="${currentStatusValue}">
+                        ${finalStatusOptions.map(opt => `<option value="${opt.value}" ${currentStatusValue === opt.value ? 'selected' : ''}>${opt.text}</option>`).join('')}
                     </select>
                  `;
-                 
+
                  return `<tr>
                      <td class="whitespace-nowrap text-sm text-gray-200">${dTD}</td>
                      <td class="text-sm text-gray-200 truncate max-w-xs">${pN}</td>
                      <td class="whitespace-nowrap text-sm text-center">${prequalCellHTML}</td>
-                     <td class="whitespace-nowrap text-sm">${statusSelectHTML}</td>
+                     <td class="text-center">${r1CheckboxHTML}</td>
+                     <td class="text-center">${r2CheckboxHTML}</td>
+                     <td class="text-center">${closeCheckboxHTML}</td>
+                     <td class="whitespace-nowrap text-sm">${finalStatusSelectHTML}</td>
                      <td class="whitespace-nowrap text-sm">${pA_display}</td>
                      <td class="whitespace-nowrap text-sm text-gray-200 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
                      <td class="whitespace-nowrap text-sm text-center space-x-2">${detailsButton} ${editButton} <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
@@ -971,7 +983,7 @@
         }
         setupModalPaymentLogic();
 
-        function openEditModal(docId, newStatus = null) { 
+        function openEditModal(docId, options = {}) { 
              const pD=currentData.find(i=>i.id===docId); if(!pD)return; 
              document.getElementById('modalProspectName').textContent=pD.prospectName||'N/A'; 
              document.getElementById('modalDocId').value=docId; 
@@ -994,11 +1006,16 @@
              if(cbR2) cbR2.checked = pD.isR2Completed || false;
              if(cbClosed) cbClosed.checked = pD.isClosed || false;
              document.getElementById('modalClosingDate').value = pD.closingDate || '';
+             
+             // Pre-check based on action from table
+             if (options.preCheck === 'r2_prevu' && cbR2) cbR2.checked = true;
+             if (options.preCheck === 'close' && cbClosed) cbClosed.checked = true;
+
              updateModalCheckboxesLogic();
              
              const cS=pD.status||'R1 Scheduled'; 
-             if (newStatus) {
-                if(modalStatusSelect) modalStatusSelect.value = newStatus;
+             if (options.statusToSet) {
+                if(modalStatusSelect) modalStatusSelect.value = options.statusToSet;
                 modalStatusSelect.dispatchEvent(new Event('change'));
              } else {
                 if(modalStatusSelect) modalStatusSelect.value = cS; 
@@ -1007,7 +1024,7 @@
              document.getElementById('modalRelaunchDate').value = pD.relaunchDate || '';
              const statusContainer = document.getElementById('modalStatusContainer');
              const relaunchDateContainer = document.getElementById('modalRelaunchDateContainer');
-             const showRelaunch = (newStatus || cS) === 'Waiting'; 
+             const showRelaunch = (options.statusToSet || cS) === 'Waiting'; 
              relaunchDateContainer.classList.toggle('hidden', !showRelaunch); 
              if(statusContainer) statusContainer.classList.toggle('sm:col-span-2', !showRelaunch);
              
@@ -1132,14 +1149,12 @@
                 const collectionPath = `artifacts/${appId}/public/data/r1_closings`;
                 const docRef = doc(db, collectionPath, docId);
                 
-                // *** FIX: Update status before redirecting ***
                 await updateDoc(docRef, { 
                     status: 'R1 Completed', 
                     isR1Completed: true,
                     lastUpdatedAt: Timestamp.now() 
                 });
 
-                // Update local data for immediate feedback
                 const docIndex = currentData.findIndex(item => item.id === docId);
                 if (docIndex > -1) {
                     currentData[docIndex].status = 'R1 Completed';
@@ -1198,47 +1213,78 @@
             }
         }
 
-        async function handleStatusChange(docId, selectElement) {
-            const newStatus = selectElement.value;
-            const originalStatus = selectElement.dataset.originalStatus;
-            const statusesRequiringModal = ['R2 Scheduled', 'Closed', 'Waiting'];
-            const simpleStatuses = ['No Show R1', 'Disqualified', 'Lost', 'R1 Completed', 'No Show R2', 'Other', 'R1 Scheduled'];
+        async function handleTableCheckboxChange(checkbox) {
+            const docId = checkbox.dataset.docId;
+            const action = checkbox.dataset.action;
+            const isChecked = checkbox.checked;
 
-            if (statusesRequiringModal.includes(newStatus)) {
-                openEditModal(docId, newStatus);
-                // Revert the select in the table as confirmation will happen in the modal
-                selectElement.value = originalStatus;
-                return;
-            }
+            checkbox.disabled = true;
 
-            if (simpleStatuses.includes(newStatus)) {
-                displayError("Mise à jour...", false);
+            if (action === 'r1_fait') {
                 try {
-                    const collectionPath = `artifacts/${appId}/public/data/r1_closings`;
-                    const docRef = doc(db, collectionPath, docId);
-                    const dataToUpdate = { 
-                        status: newStatus, 
-                        lastUpdatedAt: Timestamp.now() 
-                    };
-                    
-                    if (newStatus === 'R1 Completed') dataToUpdate.isR1Completed = true;
-                    if (newStatus === 'No Show R1') dataToUpdate.isR1Completed = false;
-
-                    await updateDoc(docRef, dataToUpdate);
-
+                    const newStatus = isChecked ? 'R1 Completed' : 'R1 Scheduled';
+                    const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
+                    await updateDoc(docRef, { isR1Completed: isChecked, status: newStatus, lastUpdatedAt: Timestamp.now() });
                     const docIndex = currentData.findIndex(item => item.id === docId);
-                    if (docIndex > -1) {
-                        currentData[docIndex] = { ...currentData[docIndex], ...dataToUpdate };
-                    }
-                    displayError("Statut mis à jour.", false);
+                    if (docIndex > -1) { currentData[docIndex].isR1Completed = isChecked; currentData[docIndex].status = newStatus; }
+                    displayError("Statut R1 mis à jour.", false);
                     renderFilteredData();
                 } catch (error) {
-                    console.error(`Erreur mise à jour statut ${docId}:`, error);
-                    displayError("Erreur de mise à jour.", true);
-                    selectElement.value = originalStatus; // Revert on error
+                    console.error("Erreur mise à jour R1:", error);
+                    displayError("Erreur mise à jour.", true);
+                    checkbox.checked = !isChecked;
+                } finally {
+                    checkbox.disabled = false;
                 }
+            } else if (action === 'r2_prevu' || action === 'close') {
+                checkbox.checked = !isChecked; // Revert visual change, modal is source of truth
+                checkbox.disabled = false;
+                openEditModal(docId, { preCheck: action });
+            } else {
+                checkbox.disabled = false;
             }
         }
+
+        async function handleFinalStatusChange(docId, selectElement) {
+            const newStatus = selectElement.value;
+            const originalStatus = selectElement.dataset.originalStatus;
+
+            if (newStatus === originalStatus) return;
+            
+            displayError("Mise à jour...", false);
+            try {
+                const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
+                const prospect = currentData.find(p => p.id === docId);
+                if (!prospect) throw new Error("Prospect not found");
+
+                const dataToUpdate = { lastUpdatedAt: Timestamp.now() };
+
+                if (newStatus) {
+                    dataToUpdate.status = newStatus;
+                    if (newStatus === 'No Show R1') dataToUpdate.isR1Completed = false;
+                    if (newStatus === 'No Show R2') dataToUpdate.isR2Completed = false;
+                    if (newStatus === 'Lost' || newStatus === 'Disqualified') dataToUpdate.isClosed = false;
+                } else {
+                    // Revert to a status based on checkboxes
+                    if (prospect.isClosed) dataToUpdate.status = 'Closed';
+                    else if (prospect.isR2Completed) dataToUpdate.status = 'R2 Scheduled';
+                    else if (prospect.isR1Completed) dataToUpdate.status = 'R1 Completed';
+                    else dataToUpdate.status = 'R1 Scheduled';
+                }
+
+                await updateDoc(docRef, dataToUpdate);
+                const docIndex = currentData.findIndex(item => item.id === docId);
+                if (docIndex > -1) { currentData[docIndex] = { ...currentData[docIndex], ...dataToUpdate }; }
+                
+                displayError("Statut mis à jour.", false);
+                renderFilteredData();
+            } catch (error) {
+                console.error(`Erreur mise à jour statut ${docId}:`, error);
+                displayError("Erreur de mise à jour.", true);
+                selectElement.value = originalStatus; // Revert on error
+            }
+        }
+
 
         function attachListeners() { 
             const tableBody = document.getElementById('detailsTableBody');
@@ -1247,17 +1293,18 @@
                 const docId = target.dataset.docId;
                 if(target.classList.contains('edit-btn')){ 
                      const prospect = currentData.find(p => p.id === docId);
-                     if (prospect && !prospect.scores) { // Only open for new system
-                        openEditModal(docId); 
-                     }
+                     if (prospect && !prospect.scores) { openEditModal(docId); }
                 } 
                 else if(target.classList.contains('delete-btn')){ openDeleteConfirmModal(docId, target.dataset.prospectName); } 
                 else if(target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(docId, target.dataset.prospectName); }
                 else if (target.closest('.prequal-status-btn')) { const btn = target.closest('.prequal-status-btn'); handlePrequalStatusCycle(btn.dataset.docId, btn.dataset.status); }
             }); 
             if(tableBody) tableBody.addEventListener('change', (e) => {
-                if (e.target.classList.contains('status-select')) {
-                    handleStatusChange(e.target.dataset.docId, e.target);
+                const target = e.target;
+                if (target.classList.contains('status-select')) {
+                    handleFinalStatusChange(target.dataset.docId, target);
+                } else if (target.classList.contains('custom-checkbox')) {
+                    handleTableCheckboxChange(target);
                 }
             });
 
