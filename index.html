@@ -99,6 +99,11 @@
                 visibility: visible;
                 opacity: 1;
             }
+
+            /* Select pour le statut dans le tableau */
+            .status-select {
+                @apply w-full bg-slate-700 border-0 rounded-md py-1 px-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-teal-400;
+            }
         }
     </style>
 </head>
@@ -196,8 +201,6 @@
                     <tr>
                         <th class="whitespace-nowrap">Date R1</th>
                         <th>Prospect</th>
-                        <th class="whitespace-nowrap">Statut Qualif.</th>
-                        <th class="text-center">Score</th>
                         <th class="text-center whitespace-nowrap">
                             <div class="tooltip-container">
                                 Pré-Qualif
@@ -211,8 +214,6 @@
                             </div>
                         </th>
                         <th>Statut</th>
-                        <th class="whitespace-nowrap">Date R2</th>
-                        <th class="whitespace-nowrap">Date Relance</th>
                         <th>Note</th>
                         <th class="text-right whitespace-nowrap">Montant Total</th>
                         <th class="text-center">Actions</th>
@@ -278,7 +279,7 @@
             <fieldset class="border border-slate-600 p-3 rounded-lg"> 
                 <legend class="text-sm font-medium text-gray-400 px-1">Statut & Suivi</legend> 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2"> 
-                    <div id="modalStatusContainer"><label for="modalStatus" class="block text-sm font-medium text-gray-300 mb-1">Statut Actuel</label><select id="modalStatus" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="R1 Scheduled">R1 Planifié</option><option value="R1 Completed">R1 Effectué</option><option value="No Show R1">No Show R1</option> <option value="R2 Scheduled">R2 Planifié</option><option value="No Show R2">No Show R2</option><option value="Disqualified">Disqualifié</option><option value="Waiting">En Attente</option> <option value="Closed">Closé</option> <option value="Lost">Perdu</option> <option value="Other">Autre</option></select></div> 
+                    <div id="modalStatusContainer"><label for="modalStatus" class="block text-sm font-medium text-gray-300 mb-1">Statut Actuel</label><select id="modalStatus" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400"><option value="R1 Scheduled">R1 Planifié</option><option value="No Show R1">No Show R1</option><option value="R1 Completed">R1 Effectué</option><option value="R2 Scheduled">R2 Planifié</option><option value="No Show R2">No Show R2</option><option value="Disqualified">Disqualifié</option><option value="Waiting">En Attente</option> <option value="Closed">Closé</option> <option value="Lost">Perdu</option> <option value="Other">Autre</option></select></div> 
                     <div id="modalRelaunchDateContainer" class="hidden sm:col-span-1 space-y-1"><label for="modalRelaunchDate" class="block text-sm font-medium text-gray-300">Date de Relance</label><input type="date" id="modalRelaunchDate" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"></div> 
                 </div> 
             </fieldset> 
@@ -421,7 +422,7 @@
         async function fetchDataAndDisplay() {
              if (!db || !appId) { displayError("DB non prête."); return; }
              const tableBody = document.getElementById('detailsTableBody');
-             tableBody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
+             tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-400">Chargement...</td></tr>`;
              resetKPIs();
              try {
                  const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const querySnapshot = await getDocs(query(collection(db, collectionPath))); currentData = [];
@@ -441,7 +442,7 @@
              } catch (error) { 
                  console.error("Erreur fetch Firestore:", error); 
                  displayError("Erreur chargement données."); 
-                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="11" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
+                 if (tableBody) tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
              }
          }
         
@@ -698,11 +699,24 @@
         function updateTable(data) {
              const tB=document.getElementById('detailsTableBody');
              if(!tB) return;
-             if(data.length===0){tB.innerHTML=`<tr><td colspan="11" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
+             if(data.length===0){tB.innerHTML=`<tr><td colspan="7" class="text-center py-4 text-gray-400">Aucune donnée pour cette vue.</td></tr>`; return;}
+             
+             const statusOptions = [
+                { value: 'R1 Scheduled', text: 'R1 Prévu' },
+                { value: 'No Show R1', text: 'No Show R1' },
+                { value: 'R1 Completed', text: 'R1 Effectué' },
+                { value: 'Disqualified', text: 'Disqualifié' },
+                { value: 'Waiting', text: 'En Attente' },
+                { value: 'R2 Scheduled', text: 'R2 Prévu' },
+                { value: 'No Show R2', text: 'No Show R2' },
+                { value: 'Closed', text: 'Closé' },
+                { value: 'Lost', text: 'Perdu' },
+                { value: 'Other', text: 'Autre' },
+             ];
+
              tB.innerHTML = data.map(i => {
                  const isOldSystem = !!i.scores;
                  const sV = i.status || 'R1 Scheduled'; 
-                 const sC = getStatusClass(sV);
                  const pA_text = i.comments || i.proposedAmount || '';
                  let pA_display;
                  if (pA_text) {
@@ -713,15 +727,9 @@
                  }
 
                  const tA = Number(i.amountCollected) || 0;
-                 const qST = (i.qualificationStatus && i.qualificationStatus !== 'N/A') ? i.qualificationStatus.replace(' (Client Rêvé)','').trim() : 'N/A';
-                 const qC = qST.includes('VERT')?'text-green-400':(qST.includes('ROUGE')?'text-red-400':'text-gray-400');
                  const pN = i.prospectName || 'N/A'; const ePn = pN.replace(/"/g,'&quot;');
                  const formattedR1Date = formatDateToDDMM(i.prospectDate);
                  const dTD = `${formattedR1Date} ${i.prospectTime?`<span class="text-xs text-gray-400">${i.prospectTime}</span>`:''}`;
-                 const formattedR2Date = formatDateToDDMM(i.prospectDateR2);
-                 const dTD_R2 = `${formattedR2Date} ${i.prospectTimeR2 ? `<span class="text-xs text-gray-400">${i.prospectTimeR2}</span>` : ''}`;
-                 const formattedRelaunchDate = formatDateToDDMM(i.relaunchDate);
-                 const relaunchDate = (sV === 'Waiting' && i.relaunchDate) ? `<span class="text-blue-300">${formattedRelaunchDate}</span>` : '-';
                  
                  const prequalStatus = i.prequalStatus || 'none';
                  let prequalIcon, prequalTooltip, prequalBtnClasses = 'prequal-status-btn p-0 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 inline-flex items-center justify-center border border-slate-600 hover:border-slate-500';
@@ -761,16 +769,18 @@
                     }
                     editButton = `<button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Modifier</button>`;
                  }
+
+                 const statusSelectHTML = `
+                    <select class="status-select" data-doc-id="${i.id}" data-original-status="${sV}">
+                        ${statusOptions.map(opt => `<option value="${opt.value}" ${sV === opt.value ? 'selected' : ''}>${opt.text}</option>`).join('')}
+                    </select>
+                 `;
                  
                  return `<tr>
                      <td class="whitespace-nowrap text-sm text-gray-200">${dTD}</td>
                      <td class="text-sm text-gray-200 truncate max-w-xs">${pN}</td>
-                     <td class="whitespace-nowrap text-sm"><span class="${qC}">${qST}</span></td>
-                     <td class="whitespace-nowrap text-sm text-gray-200 text-center">${i.scores?.total??'-'}</td>
                      <td class="whitespace-nowrap text-sm text-center">${prequalCellHTML}</td>
-                     <td class="whitespace-nowrap text-sm"><span class="status-badge ${sC}">${sV.replace('Completed','Effectué').replace('Scheduled','Planifié').replace('Waiting','En Attente').replace('Disqualified', 'Disqualifié')}</span></td>
-                     <td class="whitespace-nowrap text-sm text-gray-200">${dTD_R2}</td>
-                     <td class="whitespace-nowrap text-sm text-gray-200">${relaunchDate}</td>
+                     <td class="whitespace-nowrap text-sm">${statusSelectHTML}</td>
                      <td class="whitespace-nowrap text-sm">${pA_display}</td>
                      <td class="whitespace-nowrap text-sm text-gray-200 text-right">${tA>0?tA.toLocaleString('fr-FR')+'€':'-'}</td>
                      <td class="whitespace-nowrap text-sm text-center space-x-2">${detailsButton} ${editButton} <button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="delete-btn text-red-400 hover:text-red-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Suppr.</button> </td>
@@ -961,7 +971,7 @@
         }
         setupModalPaymentLogic();
 
-        function openEditModal(docId) { 
+        function openEditModal(docId, newStatus = null) { 
              const pD=currentData.find(i=>i.id===docId); if(!pD)return; 
              document.getElementById('modalProspectName').textContent=pD.prospectName||'N/A'; 
              document.getElementById('modalDocId').value=docId; 
@@ -987,11 +997,17 @@
              updateModalCheckboxesLogic();
              
              const cS=pD.status||'R1 Scheduled'; 
-             if(modalStatusSelect) modalStatusSelect.value=cS; 
+             if (newStatus) {
+                if(modalStatusSelect) modalStatusSelect.value = newStatus;
+                modalStatusSelect.dispatchEvent(new Event('change'));
+             } else {
+                if(modalStatusSelect) modalStatusSelect.value = cS; 
+             }
+             
              document.getElementById('modalRelaunchDate').value = pD.relaunchDate || '';
              const statusContainer = document.getElementById('modalStatusContainer');
              const relaunchDateContainer = document.getElementById('modalRelaunchDateContainer');
-             const showRelaunch = cS === 'Waiting'; 
+             const showRelaunch = (newStatus || cS) === 'Waiting'; 
              relaunchDateContainer.classList.toggle('hidden', !showRelaunch); 
              if(statusContainer) statusContainer.classList.toggle('sm:col-span-2', !showRelaunch);
              
@@ -1172,13 +1188,55 @@
                         currentData[docIndex].prequalStatus = nextStatus;
                     }
                 }
-                displayError(`Statut pré-qualif mis à jour.`);
+                displayError(`Statut pré-qualif mis à jour.`, false);
                 renderFilteredData(); // Re-render table to show the new state
 
             } catch (error) {
                 console.error(`Erreur mise à jour pré-qualif ${docId}:`, error);
                 displayError("Erreur sauvegarde pré-qualif.", true);
                 if (button) button.disabled = false;
+            }
+        }
+
+        async function handleStatusChange(docId, selectElement) {
+            const newStatus = selectElement.value;
+            const originalStatus = selectElement.dataset.originalStatus;
+            const statusesRequiringModal = ['R2 Scheduled', 'Closed', 'Waiting'];
+            const simpleStatuses = ['No Show R1', 'Disqualified', 'Lost', 'R1 Completed', 'No Show R2', 'Other', 'R1 Scheduled'];
+
+            if (statusesRequiringModal.includes(newStatus)) {
+                openEditModal(docId, newStatus);
+                // Revert the select in the table as confirmation will happen in the modal
+                selectElement.value = originalStatus;
+                return;
+            }
+
+            if (simpleStatuses.includes(newStatus)) {
+                displayError("Mise à jour...", false);
+                try {
+                    const collectionPath = `artifacts/${appId}/public/data/r1_closings`;
+                    const docRef = doc(db, collectionPath, docId);
+                    const dataToUpdate = { 
+                        status: newStatus, 
+                        lastUpdatedAt: Timestamp.now() 
+                    };
+                    
+                    if (newStatus === 'R1 Completed') dataToUpdate.isR1Completed = true;
+                    if (newStatus === 'No Show R1') dataToUpdate.isR1Completed = false;
+
+                    await updateDoc(docRef, dataToUpdate);
+
+                    const docIndex = currentData.findIndex(item => item.id === docId);
+                    if (docIndex > -1) {
+                        currentData[docIndex] = { ...currentData[docIndex], ...dataToUpdate };
+                    }
+                    displayError("Statut mis à jour.", false);
+                    renderFilteredData();
+                } catch (error) {
+                    console.error(`Erreur mise à jour statut ${docId}:`, error);
+                    displayError("Erreur de mise à jour.", true);
+                    selectElement.value = originalStatus; // Revert on error
+                }
             }
         }
 
@@ -1197,6 +1255,12 @@
                 else if(target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(docId, target.dataset.prospectName); }
                 else if (target.closest('.prequal-status-btn')) { const btn = target.closest('.prequal-status-btn'); handlePrequalStatusCycle(btn.dataset.docId, btn.dataset.status); }
             }); 
+            if(tableBody) tableBody.addEventListener('change', (e) => {
+                if (e.target.classList.contains('status-select')) {
+                    handleStatusChange(e.target.dataset.docId, e.target);
+                }
+            });
+
             document.getElementById('modalCancelButton')?.addEventListener('click',closeEditModal);
             document.getElementById('modalSaveButton')?.addEventListener('click',saveModalChanges);
             document.getElementById('editModal')?.addEventListener('click',(e)=>{if(e.target.id==='editModal')closeEditModal();}); 
