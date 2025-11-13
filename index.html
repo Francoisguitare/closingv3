@@ -64,7 +64,7 @@
         
             /* Case à cocher customisée */
             .custom-checkbox {
-                @apply w-5 h-5 rounded border-2 border-slate-500 bg-slate-700 text-teal-500 shadow-sm focus:ring-teal-400 focus:ring-offset-slate-800 cursor-pointer;
+                @apply w-5 h-5 rounded border-2 border-slate-500 bg-slate-700 text-teal-500 shadow-sm focus:ring-teal-400 focus:ring-offset-slate-800;
             }
             .custom-checkbox.checkbox-loading {
                 @apply opacity-50;
@@ -716,7 +716,7 @@
 
              tB.innerHTML = data.map(i => {
                  const isOldSystem = !!i.scores;
-                 const pA_text = i.notes || i.comments || '';
+                 const pA_text = i.comments || '';
                  let pA_display;
                  if (pA_text) {
                      const escaped_text = pA_text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1029,7 +1029,7 @@
              relaunchDateContainer.classList.toggle('hidden', !showRelaunch); 
              if(statusContainer) statusContainer.classList.toggle('sm:col-span-2', !showRelaunch);
              
-             document.getElementById('modalNote').value = pD.comments || pD.notes || '';
+             document.getElementById('modalNote').value = pD.comments || '';
              
              const pT=pD.paymentType||'unique'; 
              document.getElementById('modalPaymentType').value = pT; 
@@ -1071,8 +1071,7 @@
                      isR1Completed: nS === 'No Show R1' ? false : isR1,
                      isR2Completed: isR2,
                      isClosed: isClosed,
-                     notes: document.getElementById('modalNote').value.trim(),
-                     comments: deleteField(),
+                     comments: document.getElementById('modalNote').value.trim(),
                      proposedAmount: deleteField(),
                      lastUpdatedAt:Timestamp.now()
                  };
