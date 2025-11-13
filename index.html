@@ -67,7 +67,7 @@
                 @apply w-5 h-5 rounded border-2 border-slate-500 bg-slate-700 text-teal-500 shadow-sm focus:ring-teal-400 focus:ring-offset-slate-800 cursor-pointer;
             }
             .custom-checkbox:disabled {
-                @apply opacity-50 cursor-not-allowed;
+                @apply opacity-50 cursor-pointer;
             }
 
             /* Tooltip customisé */
@@ -1220,27 +1220,74 @@
 
             checkbox.disabled = true;
 
-            if (action === 'r1_fait') {
-                try {
-                    const newStatus = isChecked ? 'R1 Completed' : 'R1 Scheduled';
-                    const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
-                    await updateDoc(docRef, { isR1Completed: isChecked, status: newStatus, lastUpdatedAt: Timestamp.now() });
-                    const docIndex = currentData.findIndex(item => item.id === docId);
-                    if (docIndex > -1) { currentData[docIndex].isR1Completed = isChecked; currentData[docIndex].status = newStatus; }
-                    displayError("Statut R1 mis à jour.", false);
-                    renderFilteredData();
-                } catch (error) {
-                    console.error("Erreur mise à jour R1:", error);
-                    displayError("Erreur mise à jour.", true);
-                    checkbox.checked = !isChecked;
-                } finally {
-                    checkbox.disabled = false;
+            try {
+                const prospectIndex = currentData.findIndex(p => p.id === docId);
+                if (prospectIndex === -1) throw new Error("Prospect non trouvé localement.");
+                
+                const currentProspect = { ...currentData[prospectIndex] };
+                let updates = { lastUpdatedAt: Timestamp.now() };
+
+                // Déterminer le nouvel état en fonction de l'action et de la logique de cascade
+                let newIsR1 = currentProspect.isR1Completed || false;
+                let newIsR2 = currentProspect.isR2Completed || false;
+                let newIsClosed = currentProspect.isClosed || false;
+
+                if (action === 'r1_fait') newIsR1 = isChecked;
+                if (action === 'r2_prevu') newIsR2 = isChecked;
+                if (action === 'close') newIsClosed = isChecked;
+
+                if (isChecked) { // Cascade vers le haut
+                    if (newIsClosed) newIsR2 = true;
+                    if (newIsR2) newIsR1 = true;
+                } else { // Cascade vers le bas
+                    if (!newIsR1) newIsR2 = false;
+                    if (!newIsR2) newIsClosed = false;
                 }
-            } else if (action === 'r2_prevu' || action === 'close') {
-                checkbox.checked = !isChecked; // Revert visual change, modal is source of truth
-                checkbox.disabled = false;
-                openEditModal(docId, { preCheck: action });
-            } else {
+
+                // Assigner les mises à jour si l'état a changé
+                if (newIsR1 !== (currentProspect.isR1Completed || false)) updates.isR1Completed = newIsR1;
+                if (newIsR2 !== (currentProspect.isR2Completed || false)) updates.isR2Completed = newIsR2;
+                if (newIsClosed !== (currentProspect.isClosed || false)) updates.isClosed = newIsClosed;
+                
+                // Déterminer le nouveau statut
+                let newStatus = 'R1 Scheduled';
+                if (newIsClosed) {
+                    newStatus = 'Closed';
+                    // Définir automatiquement la date de closing si elle n'est pas déjà définie
+                    if (!currentProspect.closingDate) {
+                        updates.closingDate = getISODate(new Date());
+                    }
+                } else if (newIsR2) {
+                    newStatus = 'R2 Scheduled';
+                } else if (newIsR1) {
+                    newStatus = 'R1 Completed';
+                }
+                
+                // Mettre à jour le statut uniquement s'il est différent et n'est pas un statut d'exception
+                const exceptionStatuses = ['Waiting', 'No Show R1', 'No Show R2', 'Disqualified', 'Lost'];
+                if (newStatus !== currentProspect.status && !exceptionStatuses.includes(currentProspect.status)) {
+                    updates.status = newStatus;
+                }
+
+                // Vérifier s'il y a des mises à jour réelles à envoyer
+                if (Object.keys(updates).length > 1) { // plus que juste le timestamp
+                    const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
+                    await updateDoc(docRef, updates);
+
+                    // Mettre à jour les données locales pour le re-rendu
+                    currentData[prospectIndex] = { ...currentProspect, ...updates };
+                    displayError("Statut mis à jour.", false);
+                }
+
+                // Toujours re-rendre pour refléter l'état visuel, même si aucune mise à jour DB n'était nécessaire
+                renderFilteredData();
+
+            } catch (error) {
+                console.error(`Erreur de mise à jour pour ${docId}:`, error);
+                displayError("Erreur de mise à jour.", true);
+                // Rétablir l'état visuel en cas d'erreur
+                checkbox.checked = !isChecked; 
+            } finally {
                 checkbox.disabled = false;
             }
         }
