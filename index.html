@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 
     <style type="text/tailwindcss">
         @layer base {
@@ -185,7 +186,7 @@
              <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold text-gray-300">Progression</h2>
                 <div class="flex space-x-2 text-sm text-gray-400">
-                    Cliquez sur les KPIs ci-dessus pour afficher/masquer les courbes.
+                    <span>Cliquez sur un KPI pour filtrer. Cliquez sur le graphique pour ajouter un événement.</span>
                 </div>
              </div>
              <div id="chartContainer" class="h-56 flex items-center justify-center text-gray-500">
@@ -298,14 +299,35 @@
     <div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"> <div class="bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm border border-slate-700 space-y-4"> <h2 class="text-lg font-semibold text-amber-300">Confirmer Suppression</h2> <p class="text-gray-300 text-sm my-3">Supprimer "<span id="deleteProspectName" class="font-bold"></span>" ? Irréversible.</p> <input type="hidden" id="deleteDocId"> <div class="flex justify-end space-x-3 pt-4"> <button id="deleteCancelButton" type="button" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button> <button id="deleteConfirmButton" type="button" class="bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Supprimer</button> </div> <p id="deleteError" class="text-red-400 text-sm mt-2 text-center h-4"></p> </div> </div>
     <div id="startR1ConfirmModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"> <div class="bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm border border-slate-700 space-y-4"> <h2 class="text-lg font-semibold text-teal-300">Démarrer R1</h2> <p class="text-gray-300 text-sm my-3">Le prospect "<span id="startR1ProspectName" class="font-bold"></span>" est-il présent ?</p> <input type="hidden" id="startR1DocId"> <div class="flex flex-col sm:flex-row justify-between space-y-2 sm:space-y-0 sm:space-x-3 pt-4"> <button id="noShowButton" type="button" class="w-full sm:w-auto bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Absent (No Show)</button> <button id="startR1ConfirmButton" type="button" class="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Présent (Démarrer)</button> </div> <div class="flex justify-center pt-2"> <button id="startR1CancelButton" type="button" class="text-gray-400 hover:text-gray-300 text-sm">Annuler</button> </div> <p id="startR1Error" class="text-red-400 text-sm mt-2 text-center h-4"></p> </div> </div>
 
+    <!-- Annotation Modal -->
+    <div id="annotationModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden"> 
+        <div class="bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-md border border-slate-700 space-y-4"> 
+            <h2 class="text-xl font-semibold text-teal-300">Ajouter un Événement au Graphique</h2> 
+            <div>
+                <label for="annotationDate" class="block text-sm font-medium text-gray-300 mb-1">Date de l'événement</label>
+                <input type="date" id="annotationDate" required class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-teal-400">
+            </div>
+            <div>
+                <label for="annotationComment" class="block text-sm font-medium text-gray-300 mb-1">Description (ex: "Changement de prix")</label>
+                <textarea id="annotationComment" rows="3" required placeholder="Description brève de l'événement" class="w-full bg-slate-700 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400"></textarea>
+            </div>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-600 mt-4">
+                <button id="annotationCancelButton" type="button" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Annuler</button>
+                <button id="annotationSaveButton" type="button" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Enregistrer</button>
+            </div> 
+            <p id="annotationError" class="text-red-400 text-sm mt-2 text-center h-4"></p> 
+        </div> 
+    </div>
+
     <!-- Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where, doc, updateDoc, Timestamp, deleteDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, doc, updateDoc, Timestamp, deleteDoc, deleteField, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         let db, auth, appId;
         let currentData = [];
+        let annotationsData = [];
         let mainChartInstance = null; 
         let currentViewMode = 'period';
         let currentKpiFilter = null; // Pour suivre le filtre KPI
@@ -418,7 +440,7 @@
             // Update UI components with the calculated data.
             updateKPIs(dataForPeriod, filterStartDate, filterEndDate); 
             updateTable(tableData);
-            updateChart(dataForPeriod, filterStartDate, filterEndDate); 
+            updateChart(dataForPeriod, filterStartDate, filterEndDate, annotationsData); 
             const totalWaiting = currentData.filter(item => item.status === 'Waiting').length;
             safeSet('kpiWaitingCount', totalWaiting);
         }
@@ -437,6 +459,10 @@
                      const dtB = `${b.prospectDate||'0000-00-00'}T${b.prospectTime||'00:00'}`; 
                      return dtB.localeCompare(dtA); 
                  });
+
+                 const annotationsCollectionPath = `artifacts/${appId}/public/data/chart_annotations`;
+                 const annotationsSnapshot = await getDocs(query(collection(db, annotationsCollectionPath)));
+                 annotationsData = annotationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                  
                  attachListeners();
                  setupKpiCardToggles(); 
@@ -549,7 +575,7 @@
             updateTargetColor('kpi-target-r2-to-closed', r2ToClosedRate);
         }
         
-        function updateChart(dataForChart, filterStart, filterEnd) {
+        function updateChart(dataForChart, filterStart, filterEnd, annotationsData) {
             const ctx = document.getElementById('mainChart');
             if (!ctx) return;
         
@@ -622,9 +648,52 @@
             const closedData = labels.map(date => dailyData[date].closed);
             const cashData = labels.map(date => dailyData[date].cash);
         
+            const chartAnnotations = (annotationsData || [])
+                .filter(anno => {
+                    const annoDate = parseDateString(anno.date);
+                    return annoDate && annoDate >= filterStart && annoDate <= filterEnd;
+                })
+                .map(anno => ({
+                    id: anno.id,
+                    type: 'line',
+                    scaleID: 'x',
+                    value: anno.date,
+                    borderColor: 'rgba(239, 68, 68, 0.7)',
+                    borderWidth: 2,
+                    borderDash: [6, 6],
+                    label: {
+                        content: anno.comment.split('\n'),
+                        display: false,
+                        position: 'start',
+                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        color: '#e2e8f0',
+                        font: { size: 12 },
+                        padding: 8,
+                        borderRadius: 4,
+                        yAdjust: -15,
+                    },
+                    enter(ctx) {
+                        ctx.chart.canvas.style.cursor = 'pointer';
+                        ctx.element.label.options.display = true;
+                        return true;
+                    },
+                    leave(ctx) {
+                        ctx.chart.canvas.style.cursor = 'default';
+                        ctx.element.label.options.display = false;
+                        return true;
+                    },
+                    click(ctx) {
+                        const annotationId = ctx.element.options.id;
+                        const comment = ctx.element.label.options.content.join('\n');
+                        if (annotationId && confirm(`Supprimer l'événement "${comment}" ?`)) {
+                            deleteAnnotation(annotationId);
+                        }
+                    }
+            }));
+
             if (mainChartInstance) { mainChartInstance.destroy(); }
             const isHidden = (id) => { const card = document.getElementById(id); return card ? !card.classList.contains('kpi-chart-active') : true; };
-            mainChartInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'R1 Planifiés', data: r1PlannedData, borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-planned') }, { label: 'No Show R1', data: r1NoShowData, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-noshow') }, { label: 'Disqualifiés', data: disqualifiedData, borderColor: 'rgba(249, 115, 22, 1)', backgroundColor: 'rgba(249, 115, 22, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-disqualified') }, { label: 'R1 Effectués', data: r1Data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-completed') }, { label: 'R2 Planifiés', data: r2CountData, borderColor: 'rgba(168, 85, 247, 1)', backgroundColor: 'rgba(168, 85, 247, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-count') }, { label: 'No Show R2', data: r2NoShowData, borderColor: 'rgba(185, 28, 28, 1)', backgroundColor: 'rgba(185, 28, 28, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-noshow') }, { label: 'Closings', data: closedData, borderColor: 'rgba(34, 197, 94, 1)', backgroundColor: 'rgba(34, 197, 94, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-closing') }, { label: 'Cash Période (€)', data: cashData, borderColor: 'rgba(20, 184, 166, 1)', backgroundColor: 'rgba(20, 184, 166, 0.7)', tension: 0.1, yAxisID: 'yCash', hidden: isHidden('kpi-card-cash') }, ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, yCount: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#374151' }, title: { display: true, text: 'Nombre', color: '#9ca3af' } }, yCash: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#9ca3af', callback: (value) => `${value}€` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Montant (€)', color: '#9ca3af' } } }, plugins: { legend: { display: false }, tooltip: { titleFont: { size: 14 }, bodyFont: { size: 12 }, footerFont: { size: 10 } } } } }); 
+            mainChartInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'R1 Planifiés', data: r1PlannedData, borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-planned') }, { label: 'No Show R1', data: r1NoShowData, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-noshow') }, { label: 'Disqualifiés', data: disqualifiedData, borderColor: 'rgba(249, 115, 22, 1)', backgroundColor: 'rgba(249, 115, 22, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-disqualified') }, { label: 'R1 Effectués', data: r1Data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-completed') }, { label: 'R2 Planifiés', data: r2CountData, borderColor: 'rgba(168, 85, 247, 1)', backgroundColor: 'rgba(168, 85, 247, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-count') }, { label: 'No Show R2', data: r2NoShowData, borderColor: 'rgba(185, 28, 28, 1)', backgroundColor: 'rgba(185, 28, 28, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-noshow') }, { label: 'Closings', data: closedData, borderColor: 'rgba(34, 197, 94, 1)', backgroundColor: 'rgba(34, 197, 94, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-closing') }, { label: 'Cash Période (€)', data: cashData, borderColor: 'rgba(20, 184, 166, 1)', backgroundColor: 'rgba(20, 184, 166, 0.7)', tension: 0.1, yAxisID: 'yCash', hidden: isHidden('kpi-card-cash') }, ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, onClick: (event, elements, chart) => { if (chart) { const dateIndex = chart.scales.x.getValueForPixel(event.x); const dateString = chart.data.labels[dateIndex]; if (dateString) { openAnnotationModal(dateString); } } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, yCount: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#374151' }, title: { display: true, text: 'Nombre', color: '#9ca3af' } }, yCash: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#9ca3af', callback: (value) => `${value}€` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Montant (€)', color: '#9ca3af' } } }, plugins: { annotation: { annotations: chartAnnotations }, legend: { display: false }, tooltip: { titleFont: { size: 14 }, bodyFont: { size: 12 }, footerFont: { size: 10 } } } } }); 
             updateChartVisibility();
         }
         
@@ -1334,6 +1403,56 @@
             }
         }
 
+        function openAnnotationModal(dateStr = null) {
+            document.getElementById('annotationModal').classList.remove('hidden');
+            document.getElementById('annotationDate').value = dateStr || getISODate(new Date());
+            document.getElementById('annotationComment').value = '';
+            document.getElementById('annotationError').textContent = '';
+        }
+
+        function closeAnnotationModal() {
+            document.getElementById('annotationModal').classList.add('hidden');
+        }
+        
+        async function saveAnnotation() {
+            const date = document.getElementById('annotationDate').value;
+            const comment = document.getElementById('annotationComment').value.trim();
+            const errorEl = document.getElementById('annotationError');
+            if (!date || !comment) { errorEl.textContent = "Date et description sont requises."; return; }
+
+            const saveButton = document.getElementById('annotationSaveButton');
+            saveButton.disabled = true;
+            saveButton.textContent = 'Sauvegarde...';
+            errorEl.textContent = '';
+
+            try {
+                const collectionPath = `artifacts/${appId}/public/data/chart_annotations`;
+                const dataToSave = { date: date, comment: comment, createdAt: Timestamp.now() };
+                const newDocRef = await addDoc(collection(db, collectionPath), dataToSave);
+                annotationsData.push({ id: newDocRef.id, ...dataToSave });
+                renderFilteredData();
+                closeAnnotationModal();
+            } catch (error) {
+                console.error("Error saving annotation:", error);
+                errorEl.textContent = "Erreur lors de la sauvegarde.";
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Enregistrer';
+            }
+        }
+
+        async function deleteAnnotation(docId) {
+            try {
+                displayError("Suppression de l'événement...", false);
+                const collectionPath = `artifacts/${appId}/public/data/chart_annotations`;
+                await deleteDoc(doc(db, collectionPath, docId));
+                annotationsData = annotationsData.filter(a => a.id !== docId);
+                renderFilteredData();
+            } catch(error) {
+                console.error("Error deleting annotation:", error);
+                displayError("Erreur de suppression.", true);
+            }
+        }
 
         function attachListeners() { 
             const tableBody = document.getElementById('detailsTableBody');
@@ -1367,11 +1486,19 @@
             document.getElementById('noShowButton')?.addEventListener('click', handleNoShow); 
             document.getElementById('startR1ConfirmButton')?.addEventListener('click', handleStartR1Confirm); 
             document.getElementById('startR1ConfirmModal')?.addEventListener('click', (e) => { if (e.target.id === 'startR1ConfirmModal') closeStartR1ConfirmModal(); }); 
+
+            // Annotation Modal Listeners
+            document.getElementById('annotationCancelButton')?.addEventListener('click', closeAnnotationModal);
+            document.getElementById('annotationSaveButton')?.addEventListener('click', saveAnnotation);
+            document.getElementById('annotationModal')?.addEventListener('click', (e) => { if(e.target.id === 'annotationModal') closeAnnotationModal(); });
         }
         
         // --- Démarrage ---
         document.addEventListener('DOMContentLoaded', async () => {
             try {
+                if(window.ChartAnnotation) {
+                    Chart.register(window.ChartAnnotation);
+                }
                 await initFirebase();
                 await fetchDataAndDisplay();
             } catch (error) {
