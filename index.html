@@ -581,45 +581,77 @@
         
             const dailyData = {};
             let currentDate = new Date(filterStart);
+            const createMetric = () => ({ count: 0, names: [] });
+
             while (currentDate <= filterEnd) {
                 const dateString = getISODate(currentDate);
-                dailyData[dateString] = { r1: 0, r1_planned: 0, r1_noshow: 0, r2_count: 0, r2_noshow: 0, closed: 0, cash: 0, disqualified: 0 };
+                dailyData[dateString] = {
+                    r1_planned: createMetric(),
+                    r1_noshow: createMetric(),
+                    disqualified: createMetric(),
+                    r1: createMetric(), // R1 Effectués
+                    r2_count: createMetric(),
+                    r2_noshow: createMetric(),
+                    closed: createMetric(),
+                    cash: { count: 0, names: [] } // Cash is special, count is amount
+                };
                 currentDate.setDate(currentDate.getDate() + 1);
             }
         
             // Remplir les données du COHORT (R1, R2) basé sur la date de R1
             dataForChart.forEach(item => {
                 const itemR1DateStr = item.prospectDate;
+                const prospectName = item.prospectName || 'N/A';
                 if (dailyData[itemR1DateStr]) {
-                    dailyData[itemR1DateStr].r1_planned++;
-                    if (item.status === 'No Show R1') dailyData[itemR1DateStr].r1_noshow++;
-                    if (item.status === 'Disqualified') dailyData[itemR1DateStr].disqualified++;
-                    if (item.isR1Completed === true) dailyData[itemR1DateStr].r1++;
-                    if (item.isR2Completed === true || item.status === 'No Show R2') dailyData[itemR1DateStr].r2_count++;
-                    if (item.status === 'No Show R2') dailyData[itemR1DateStr].r2_noshow++;
+                    dailyData[itemR1DateStr].r1_planned.count++;
+                    dailyData[itemR1DateStr].r1_planned.names.push(prospectName);
+
+                    if (item.status === 'No Show R1') {
+                        dailyData[itemR1DateStr].r1_noshow.count++;
+                        dailyData[itemR1DateStr].r1_noshow.names.push(prospectName);
+                    }
+                    if (item.status === 'Disqualified') {
+                        dailyData[itemR1DateStr].disqualified.count++;
+                        dailyData[itemR1DateStr].disqualified.names.push(prospectName);
+                    }
+                    if (item.isR1Completed === true) {
+                        dailyData[itemR1DateStr].r1.count++;
+                        dailyData[itemR1DateStr].r1.names.push(prospectName);
+                    }
+                    if (item.isR2Completed === true || item.status === 'No Show R2') {
+                        dailyData[itemR1DateStr].r2_count.count++;
+                        dailyData[itemR1DateStr].r2_count.names.push(prospectName);
+                    }
+                    if (item.status === 'No Show R2') {
+                        dailyData[itemR1DateStr].r2_noshow.count++;
+                        dailyData[itemR1DateStr].r2_noshow.names.push(prospectName);
+                    }
                 }
             });
         
             // Remplir les données de la PÉRIODE (Closings, Cash) basé sur la date de l'événement
             currentData.forEach(item => {
+                const prospectName = item.prospectName || 'N/A';
                 if (item.isClosed === true) {
-                    // Compter le closing à sa date de closing
                     const closingDate = parseDateString(item.closingDate);
                     if (closingDate && closingDate >= filterStart && closingDate <= filterEnd) {
                         const closingDateStr = getISODate(closingDate);
                         if (dailyData[closingDateStr]) {
-                            dailyData[closingDateStr].closed++;
+                            dailyData[closingDateStr].closed.count++;
+                            dailyData[closingDateStr].closed.names.push(prospectName);
                         }
                     }
         
-                    // Attribuer le cash
                     const pT = item.paymentType || 'unique';
                     if (pT === 'unique') {
                         const pD = closingDate; // Utilise la date de closing
                         const amt = Number(item.amountCollected) || 0;
                         if (pD && pD >= filterStart && pD <= filterEnd) {
                             const cashDateStr = getISODate(pD);
-                            if (dailyData[cashDateStr]) dailyData[cashDateStr].cash += amt;
+                            if (dailyData[cashDateStr] && amt > 0) {
+                                dailyData[cashDateStr].cash.count += amt;
+                                dailyData[cashDateStr].cash.names.push(`${prospectName} (${amt.toLocaleString('fr-FR')}€)`);
+                            }
                         }
                     } else if (pT === 'installments') {
                         const pD = parseDateString(item.startDateOfPayment);
@@ -630,7 +662,10 @@
                                 const cPD = addMonths(pD, i);
                                 if (cPD >= filterStart && cPD <= filterEnd) {
                                     const cPDS = getISODate(cPD);
-                                    if (dailyData[cPDS]) dailyData[cPDS].cash += amt;
+                                    if (dailyData[cPDS]) {
+                                        dailyData[cPDS].cash.count += amt;
+                                        dailyData[cPDS].cash.names.push(`${prospectName} (${amt.toLocaleString('fr-FR')}€)`);
+                                    }
                                 }
                             }
                         }
@@ -639,14 +674,14 @@
             });
         
             const labels = Object.keys(dailyData).sort();
-            const r1PlannedData = labels.map(date => dailyData[date].r1_planned);
-            const r1NoShowData = labels.map(date => dailyData[date].r1_noshow);
-            const disqualifiedData = labels.map(date => dailyData[date].disqualified);
-            const r1Data = labels.map(date => dailyData[date].r1);
-            const r2CountData = labels.map(date => dailyData[date].r2_count);
-            const r2NoShowData = labels.map(date => dailyData[date].r2_noshow);
-            const closedData = labels.map(date => dailyData[date].closed);
-            const cashData = labels.map(date => dailyData[date].cash);
+            const r1PlannedData = labels.map(date => dailyData[date].r1_planned.count);
+            const r1NoShowData = labels.map(date => dailyData[date].r1_noshow.count);
+            const disqualifiedData = labels.map(date => dailyData[date].disqualified.count);
+            const r1Data = labels.map(date => dailyData[date].r1.count);
+            const r2CountData = labels.map(date => dailyData[date].r2_count.count);
+            const r2NoShowData = labels.map(date => dailyData[date].r2_noshow.count);
+            const closedData = labels.map(date => dailyData[date].closed.count);
+            const cashData = labels.map(date => dailyData[date].cash.count);
         
             const chartAnnotations = (annotationsData || [])
                 .filter(anno => {
@@ -693,7 +728,7 @@
 
             if (mainChartInstance) { mainChartInstance.destroy(); }
             const isHidden = (id) => { const card = document.getElementById(id); return card ? !card.classList.contains('kpi-chart-active') : true; };
-            mainChartInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'R1 Planifiés', data: r1PlannedData, borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-planned') }, { label: 'No Show R1', data: r1NoShowData, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-noshow') }, { label: 'Disqualifiés', data: disqualifiedData, borderColor: 'rgba(249, 115, 22, 1)', backgroundColor: 'rgba(249, 115, 22, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-disqualified') }, { label: 'R1 Effectués', data: r1Data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-completed') }, { label: 'R2 Planifiés', data: r2CountData, borderColor: 'rgba(168, 85, 247, 1)', backgroundColor: 'rgba(168, 85, 247, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-count') }, { label: 'No Show R2', data: r2NoShowData, borderColor: 'rgba(185, 28, 28, 1)', backgroundColor: 'rgba(185, 28, 28, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-noshow') }, { label: 'Closings', data: closedData, borderColor: 'rgba(34, 197, 94, 1)', backgroundColor: 'rgba(34, 197, 94, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-closing') }, { label: 'Cash Période (€)', data: cashData, borderColor: 'rgba(20, 184, 166, 1)', backgroundColor: 'rgba(20, 184, 166, 0.7)', tension: 0.1, yAxisID: 'yCash', hidden: isHidden('kpi-card-cash') }, ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, onClick: (event, elements, chart) => { if (chart) { const dateIndex = chart.scales.x.getValueForPixel(event.x); const dateString = chart.data.labels[dateIndex]; if (dateString) { openAnnotationModal(dateString); } } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, yCount: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#374151' }, title: { display: true, text: 'Nombre', color: '#9ca3af' } }, yCash: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#9ca3af', callback: (value) => `${value}€` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Montant (€)', color: '#9ca3af' } } }, plugins: { annotation: { annotations: chartAnnotations }, legend: { display: false }, tooltip: { titleFont: { size: 14 }, bodyFont: { size: 12 }, footerFont: { size: 10 } } } } }); 
+            mainChartInstance = new Chart(ctx.getContext('2d'), { type: 'line', data: { labels: labels, datasets: [ { label: 'R1 Planifiés', data: r1PlannedData, borderColor: 'rgba(245, 158, 11, 1)', backgroundColor: 'rgba(245, 158, 11, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-planned') }, { label: 'No Show R1', data: r1NoShowData, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-noshow') }, { label: 'Disqualifiés', data: disqualifiedData, borderColor: 'rgba(249, 115, 22, 1)', backgroundColor: 'rgba(249, 115, 22, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-disqualified') }, { label: 'R1 Effectués', data: r1Data, borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r1-completed') }, { label: 'R2 Planifiés', data: r2CountData, borderColor: 'rgba(168, 85, 247, 1)', backgroundColor: 'rgba(168, 85, 247, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-count') }, { label: 'No Show R2', data: r2NoShowData, borderColor: 'rgba(185, 28, 28, 1)', backgroundColor: 'rgba(185, 28, 28, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-r2-noshow') }, { label: 'Closings', data: closedData, borderColor: 'rgba(34, 197, 94, 1)', backgroundColor: 'rgba(34, 197, 94, 0.7)', tension: 0.1, yAxisID: 'yCount', hidden: isHidden('kpi-card-closing') }, { label: 'Cash Période (€)', data: cashData, borderColor: 'rgba(20, 184, 166, 1)', backgroundColor: 'rgba(20, 184, 166, 0.7)', tension: 0.1, yAxisID: 'yCash', hidden: isHidden('kpi-card-cash') }, ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, onClick: (event, elements, chart) => { if (chart) { const dateIndex = chart.scales.x.getValueForPixel(event.x); const dateString = chart.data.labels[dateIndex]; if (dateString) { openAnnotationModal(dateString); } } }, scales: { x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }, yCount: { type: 'linear', position: 'left', beginAtZero: true, ticks: { color: '#9ca3af', stepSize: 1 }, grid: { color: '#374151' }, title: { display: true, text: 'Nombre', color: '#9ca3af' } }, yCash: { type: 'linear', position: 'right', beginAtZero: true, ticks: { color: '#9ca3af', callback: (value) => `${value}€` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Montant (€)', color: '#9ca3af' } } }, plugins: { annotation: { annotations: chartAnnotations }, legend: { display: false }, tooltip: { titleFont: { size: 14 }, bodyFont: { size: 12 }, footerFont: { size: 10, weight: 'normal' }, footerColor: '#cbd5e1', footerSpacing: 4, callbacks: { footer: function(tooltipItems) { const dateIndex = tooltipItems[0]?.dataIndex; if (dateIndex === undefined) return ''; const date = labels[dateIndex]; if (!date || !dailyData[date]) return ''; const namesToShow = []; tooltipItems.forEach(item => { if (item.dataset.hidden || item.parsed.y === 0) return; const datasetLabel = item.dataset.label; let prospectList = []; switch(datasetLabel) { case 'R1 Planifiés': prospectList = dailyData[date].r1_planned.names; break; case 'No Show R1': prospectList = dailyData[date].r1_noshow.names; break; case 'Disqualifiés': prospectList = dailyData[date].disqualified.names; break; case 'R1 Effectués': prospectList = dailyData[date].r1.names; break; case 'R2 Planifiés': prospectList = dailyData[date].r2_count.names; break; case 'No Show R2': prospectList = dailyData[date].r2_noshow.names; break; case 'Closings': prospectList = dailyData[date].closed.names; break; case 'Cash Période (€)': prospectList = dailyData[date].cash.names; break; } if (prospectList && prospectList.length > 0) { namesToShow.push(...prospectList); } }); const uniqueNames = [...new Set(namesToShow)]; if (uniqueNames.length > 0) { return ['', 'Personnes concernées:', ...uniqueNames.map(name => `• ${name}`)]; } return ''; } } } } } }); 
             updateChartVisibility();
         }
         
@@ -784,7 +819,6 @@
              ];
 
              tB.innerHTML = data.map(i => {
-                 const isOldSystem = !!i.scores;
                  const pA_text = i.comments || '';
                  let pA_display;
                  if (pA_text) {
@@ -826,17 +860,12 @@
                  const prequalCellHTML = `<div class="tooltip-container"><button class="${prequalBtnClasses}" data-doc-id="${i.id}" data-status="${prequalStatus}">${prequalIcon}</button><span class="tooltip-text !w-60 !-ml-32">${prequalTooltip}</span></div>`;
 
                  let detailsButton, editButton;
-                 if (isOldSystem) {
-                    detailsButton = `<span class="text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded cursor-not-allowed" title="Ancienne fiche, non modifiable.">Détails</span>`;
-                    editButton = `<span class="text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded cursor-not-allowed" title="Ancienne fiche, non modifiable.">Modifier</span>`;
+                 if (i.status === 'R1 Scheduled') {
+                     detailsButton = `<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0.5 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;
                  } else {
-                    if (i.status === 'R1 Scheduled') {
-                        detailsButton = `<button data-doc-id="${i.id}" data-prospect-name="${ePn}" class="start-r1-prompt-btn text-yellow-400 hover:text-yellow-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors whitespace-nowrap">Démarrer R1</button>`;
-                    } else {
-                        detailsButton = `<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Détails</a>`;
-                    }
-                    editButton = `<button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Modifier</button>`;
+                     detailsButton = `<a href="main.html?docId=${i.id}" class="details-btn text-blue-400 hover:text-blue-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Détails</a>`;
                  }
+                 editButton = `<button data-doc-id="${i.id}" class="edit-btn text-green-400 hover:text-green-300 text-xs font-medium px-1.5 py-0 rounded hover:bg-slate-700 transition-colors">Modifier</button>`;
                  
                  const isR1Done = i.isR1Completed === true;
                  const isR2Done = i.isR2Completed === true;
@@ -1142,6 +1171,7 @@
                      isClosed: isClosed,
                      comments: document.getElementById('modalNote').value.trim(),
                      proposedAmount: deleteField(),
+                     scores: deleteField(),
                      lastUpdatedAt:Timestamp.now()
                  };
                  
@@ -1460,8 +1490,7 @@
                 const target = e.target;
                 const docId = target.dataset.docId;
                 if(target.classList.contains('edit-btn')){ 
-                     const prospect = currentData.find(p => p.id === docId);
-                     if (prospect && !prospect.scores) { openEditModal(docId); }
+                    openEditModal(docId);
                 } 
                 else if(target.classList.contains('delete-btn')){ openDeleteConfirmModal(docId, target.dataset.prospectName); } 
                 else if(target.classList.contains('start-r1-prompt-btn')) { openStartR1ConfirmModal(docId, target.dataset.prospectName); }
