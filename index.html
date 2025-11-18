@@ -744,7 +744,7 @@
             kpiCards.forEach(id => {
                 const cardEl = document.getElementById(id);
                 if (cardEl) {
-                    const defaultActive = ['kpi-card-r1-planned', 'kpi-card-r1-completed', 'kpi-card-closing'];
+                    const defaultActive = ['kpi-card-r1-planned'];
                     if (defaultActive.includes(id)) {
                         cardEl.classList.add('kpi-chart-active');
                         cardEl.classList.remove('opacity-60');
