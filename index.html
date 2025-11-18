@@ -57,9 +57,9 @@
             tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
             tr:last-child td { @apply border-b-0; }
             
-            /* KPI Cliquable (pour Graphique ET Filtre) */
+            /* KPI Cliquable (pour Graphique) */
             .kpi-card-toggle { @apply cursor-pointer transition-all duration-200; }
-            .kpi-chart-active { @apply ring-2 ring-offset-2 ring-offset-slate-900 ring-white/70; }
+            .kpi-chart-active { @apply ring-2 ring-offset-2 ring-offset-slate-900 ring-white/70 opacity-100; }
             .kpi-card-toggle:not(.kpi-chart-active) { @apply opacity-60 hover:opacity-100; }
             .kpi-card-static { @apply bg-slate-800/80 backdrop-blur-sm border border-slate-700 p-3 rounded-lg shadow-lg text-center transition-all duration-300 relative overflow-hidden border-t-2; }
         
@@ -186,7 +186,7 @@
              <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold text-gray-300">Progression</h2>
                 <div class="flex space-x-2 text-sm text-gray-400">
-                    <span>Cliquez sur un KPI pour filtrer. Cliquez sur le graphique pour ajouter un événement.</span>
+                    <span>Cliquez sur un KPI pour l'afficher/cacher. Cliquez sur le graphique pour ajouter un événement.</span>
                 </div>
              </div>
              <div id="chartContainer" class="h-56 flex items-center justify-center text-gray-500">
@@ -330,7 +330,6 @@
         let annotationsData = [];
         let mainChartInstance = null; 
         let currentViewMode = 'period';
-        let currentKpiFilter = null; // Pour suivre le filtre KPI
 
         // --- Fonctions Utilitaires ---
         function addMonths(date, months) { const d = new Date(date); d.setMonth(d.getMonth() + months); if (d.getDate() !== new Date(date).getDate()) { d.setDate(0); } return d; }
@@ -381,63 +380,19 @@
             if (!filterStartDate || !filterEndDate) { displayError("Dates de filtre invalides."); return; }
             filterEndDate.setUTCHours(23, 59, 59, 999);
             
-            // This is the base data for the selected period, used for KPIs, chart, and as a base for table filtering.
-            // It should contain ALL prospects with an R1 scheduled in this period, regardless of status.
             const dataForPeriod = currentData.filter(item => { 
                 const itemR1Date = parseDateString(item.prospectDate); 
                 return itemR1Date && itemR1Date >= filterStartDate && itemR1Date <= filterEndDate; 
             });
             
-            let tableData; // This will hold the final data for the table view.
-            
-            if (currentKpiFilter) {
-                // A KPI card is active, so filter the table data based on it.
-                switch (currentKpiFilter) {
-                    case 'kpi-card-r1-planned':
-                        tableData = dataForPeriod; // "R1 Planifiés" shows everyone in the period.
-                        break;
-                    case 'kpi-card-r1-noshow':
-                        tableData = dataForPeriod.filter(item => item.status === 'No Show R1');
-                        break;
-                    case 'kpi-card-disqualified':
-                        tableData = dataForPeriod.filter(item => item.status === 'Disqualified');
-                        break;
-                    case 'kpi-card-r1-completed':
-                        tableData = dataForPeriod.filter(item => item.isR1Completed === true);
-                        break;
-                    case 'kpi-card-r2-count': // R2 Planifiés
-                        tableData = dataForPeriod.filter(item => item.isR2Completed === true || item.status === 'No Show R2');
-                        break;
-                    case 'kpi-card-r2-noshow':
-                        tableData = dataForPeriod.filter(item => item.status === 'No Show R2');
-                        break;
-                    case 'kpi-card-closing':
-                        tableData = currentData.filter(p => {
-                            const cD = parseDateString(p.closingDate);
-                            return p.isClosed === true && cD && cD >= filterStartDate && cD <= filterEndDate;
-                        });
-                        break;
-                    case 'kpi-card-cash':
-                        tableData = currentData.filter(p => {
-                            const cD = parseDateString(p.closingDate);
-                            return p.isClosed === true && cD && cD >= filterStartDate && cD <= filterEndDate;
-                        });
-                        break;
-                    default:
-                        // If an unknown filter is set, fall back to showing everything for the period.
-                        tableData = dataForPeriod;
-                        break;
-                }
-            } else if (currentViewMode === 'waiting') {
-                // "En Attente" view shows all prospects with this status, regardless of date range.
+            let tableData;
+            if (currentViewMode === 'waiting') {
                 tableData = currentData.filter(item => item.status === 'Waiting');
                 tableData.sort((a, b) => (a.relaunchDate || '9999-12-31').localeCompare(b.relaunchDate || '9999-12-31'));
             } else {
-                // Default 'period' view: show all prospects within the date range.
                 tableData = dataForPeriod; 
             }
 
-            // Update UI components with the calculated data.
             updateKPIs(dataForPeriod, filterStartDate, filterEndDate); 
             updateTable(tableData);
             updateChart(dataForPeriod, filterStartDate, filterEndDate, annotationsData); 
@@ -466,7 +421,7 @@
                  
                  attachListeners();
                  setupKpiCardToggles(); 
-                 setupFiltersAndLoad(); // Lance le premier renderFilteredData
+                 setupFiltersAndLoad();
                  await fetchAndDisplaySlidingKPIs(currentData); 
 
              } catch (error) { 
@@ -734,12 +689,13 @@
         
         function updateChartVisibility() { if (!mainChartInstance) return; try { const isHidden = (id) => { const card = document.getElementById(id); return card ? !card.classList.contains('kpi-chart-active') : true; }; mainChartInstance.data.datasets[0].hidden = isHidden('kpi-card-r1-planned'); mainChartInstance.data.datasets[1].hidden = isHidden('kpi-card-r1-noshow'); mainChartInstance.data.datasets[2].hidden = isHidden('kpi-card-disqualified'); mainChartInstance.data.datasets[3].hidden = isHidden('kpi-card-r1-completed'); mainChartInstance.data.datasets[4].hidden = isHidden('kpi-card-r2-count'); mainChartInstance.data.datasets[5].hidden = isHidden('kpi-card-r2-noshow'); mainChartInstance.data.datasets[6].hidden = isHidden('kpi-card-closing'); mainChartInstance.data.datasets[7].hidden = isHidden('kpi-card-cash'); mainChartInstance.update(); } catch (e) { console.error("Erreur MAJ visibilité graphique:", e); } }
 
-        function deactiveAllKpiCards() {
+        function deactivateAllChartKpis() {
             document.querySelectorAll('.kpi-card-toggle').forEach(card => {
-                card.classList.remove('kpi-chart-active');
-                card.classList.add('opacity-60');
+                if (card.id !== 'kpi-card-waiting') {
+                    card.classList.remove('kpi-chart-active');
+                    card.classList.add('opacity-60');
+                }
             });
-            updateChartVisibility();
         }
 
         function setupKpiCardToggles() {
@@ -748,49 +704,48 @@
             const kpiToggleLogic = (e) => {
                 const card = e.currentTarget;
                 const cardId = card.id;
-                const wasActive = card.classList.contains('kpi-chart-active');
                 const dateShortcutsContainer = document.getElementById('dateShortcuts');
 
-                deactiveAllKpiCards(); // Deactivates all cards visually first.
+                if (cardId === 'kpi-card-waiting') {
+                    const wasActive = card.classList.contains('kpi-chart-active');
+                    if (wasActive) return;
 
-                if (wasActive) {
-                    // Reset to default period view (all items in period)
-                    currentViewMode = 'period';
-                    currentKpiFilter = null;
-                    // Visually activate the default KPI card for the chart
-                    const defaultCard = document.getElementById('kpi-card-r1-planned');
-                    if(defaultCard) {
-                        defaultCard.classList.add('kpi-chart-active');
-                        defaultCard.classList.remove('opacity-60');
-                    }
-                    // Ensure dates are enabled
-                    dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = false);
-                    renderFilteredData();
-                } else {
-                    // Activate the new card
+                    deactivateAllChartKpis();
+
                     card.classList.add('kpi-chart-active');
                     card.classList.remove('opacity-60');
-
-                    if (cardId === 'kpi-card-waiting') {
-                        currentViewMode = 'waiting';
-                        currentKpiFilter = null;
-                        dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = true);
-                        // Also visually deactivate date shortcuts
-                        dateShortcutsContainer.querySelectorAll('button.active').forEach(b => b.classList.remove('active'));
-                    } else {
-                        currentViewMode = 'period';
-                        currentKpiFilter = cardId;
-                        dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = false);
-                    }
+                    
+                    currentViewMode = 'waiting';
+                    dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = true);
+                    dateShortcutsContainer.querySelectorAll('button.active').forEach(b => b.classList.remove('active'));
+                    
                     renderFilteredData();
+                    updateChartVisibility();
+
+                } else {
+                    if (currentViewMode === 'waiting') {
+                        currentViewMode = 'period';
+                        const waitingCard = document.getElementById('kpi-card-waiting');
+                        if (waitingCard) {
+                            waitingCard.classList.remove('kpi-chart-active');
+                            waitingCard.classList.add('opacity-60');
+                        }
+                        dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = false);
+                        renderFilteredData();
+                    }
+                    
+                    card.classList.toggle('kpi-chart-active');
+                    card.classList.toggle('opacity-60');
+                    
+                    updateChartVisibility();
                 }
-                updateChartVisibility();
             };
 
             kpiCards.forEach(id => {
                 const cardEl = document.getElementById(id);
                 if (cardEl) {
-                    if (id === 'kpi-card-r1-planned') { // Actif par défaut
+                    const defaultActive = ['kpi-card-r1-planned', 'kpi-card-r1-completed', 'kpi-card-closing'];
+                    if (defaultActive.includes(id)) {
                         cardEl.classList.add('kpi-chart-active');
                         cardEl.classList.remove('opacity-60');
                     } else {
@@ -800,8 +755,6 @@
                     cardEl.addEventListener('click', kpiToggleLogic);
                 } else { console.warn(`KPI Card Toggle non trouvé: #${id}`); }
             });
-            const cashFutureCard = document.getElementById('kpi-card-cash-future');
-            if(cashFutureCard) cashFutureCard.classList.remove('kpi-card-toggle', 'opacity-60');
         }
         
         function updateTable(data) {
@@ -932,14 +885,14 @@
                 shortcuts.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
                 ev.target.classList.add('active');
                 
-                // Force period view and reset KPI filters
-                currentViewMode = 'period';
-                currentKpiFilter = null; 
-                deactiveAllKpiCards();
-                const defaultActiveCard = document.getElementById('kpi-card-r1-planned');
-                if (defaultActiveCard) {
-                    defaultActiveCard.classList.add('kpi-chart-active');
-                    defaultActiveCard.classList.remove('opacity-60');
+                if (currentViewMode === 'waiting') {
+                    currentViewMode = 'period';
+                    const waitingCard = document.getElementById('kpi-card-waiting');
+                    if(waitingCard) {
+                        waitingCard.classList.remove('kpi-chart-active');
+                        waitingCard.classList.add('opacity-60');
+                    }
+                    shortcuts.querySelectorAll('button').forEach(b => b.disabled = false);
                 }
 
                 const days = ev.target.dataset.days;
@@ -961,7 +914,6 @@
                 const eUTC = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
                 setDates(sUTC, eUTC);
                 renderFilteredData();
-                updateChartVisibility();
             }
             shortcuts.addEventListener('click', handleShortcutClick);
 
