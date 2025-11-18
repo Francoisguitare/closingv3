@@ -93,37 +93,7 @@
                 </div>
             </div>
 
-            <fieldset class="border border-slate-600 p-4 rounded-lg">
-                <legend class="text-sm font-medium text-gray-400 px-1">Checklist Pré-qualification R1</legend>
-                <div class="space-y-3 pt-2 text-sm">
-                    <div class="flex items-center gap-3">
-                        <input id="checkNature" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                        <label for="checkNature" class="text-gray-300">Nature: Formation intensive 9 mois</label>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <input id="checkFormat" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                        <label for="checkFormat" class="text-gray-300">Format: Parcours linéaire/séquentiel</label>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <input id="checkCoaching" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                        <label for="checkCoaching" class="text-gray-300">Coaching: Envoi vidéos WhatsApp quotidien</label>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <input id="checkDiscipline" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                        <label for="checkDiscipline" class="text-gray-300">Discipline: Engagement sur 9 mois fermes</label>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <input id="checkEquipment" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                        <label for="checkEquipment" class="text-gray-300">Équipement: Guitare + Smartphone/PC OK</label>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <input id="checkInvestment" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                        <label for="checkInvestment" class="font-semibold text-white">Investissement: Budget 2300-2900€ validé</label>
-                    </div>
-                </div>
-            </fieldset>
-
-            <hr class="border-slate-700"/>
+            <hr class="border-slate-700 mt-6"/>
             <button id="scheduleButton" disabled class="button-disabled">Remplir les informations</button>
         </div>
     </div>
@@ -139,25 +109,22 @@
         async function initFirebase() { try { const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" }; appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; const app = initializeApp(fC); db = getFirestore(app); auth = getAuth(app); await new Promise((resolve, reject) => { onAuthStateChanged(auth, async (user) => { if (user) { resolve(); } else { try { await signInAnonymously(auth); resolve(); } catch (e){ console.error("Err anon:", e); reject(e); }} }); }); console.log("Firebase prêt (dashboard.html)"); return true; } catch (e) { console.error("Err init Firebase:", e); showFeedback("Erreur DB ou Authentification.", true); return false; } }
         document.addEventListener('DOMContentLoaded', async () => {
             const fN = document.getElementById('prospectFirstNameInput'); const lN = document.getElementById('prospectLastNameInput'); const dI = document.getElementById('prospectDateInput'); const tI = document.getElementById('prospectTimeInput'); const sB = document.getElementById('scheduleButton');
-            const chkNature = document.getElementById('checkNature'); const chkFormat = document.getElementById('checkFormat'); const chkCoaching = document.getElementById('checkCoaching'); const chkDiscipline = document.getElementById('checkDiscipline'); const chkEquipment = document.getElementById('checkEquipment'); const chkInvestment = document.getElementById('checkInvestment');
-
+            
             const fR = await initFirebase(); if (!fR) { sB.textContent = "Erreur DB"; return; }
             function uSBS() { 
                 const f = fN.value.trim(), l = lN.value.trim(), d = dI.value, t = tI.value; 
-                const allChecked = chkNature.checked && chkFormat.checked && chkCoaching.checked && chkDiscipline.checked && chkEquipment.checked && chkInvestment.checked;
-                const cS = f && l && d && t && allChecked && !isSaving; 
+                const cS = f && l && d && t && !isSaving; 
                 sB.disabled = !cS; 
                 if (isSaving) { 
                     sB.textContent = "Enregistrement..."; 
                 } else if (cS) { 
                     sB.textContent = "Enregistrer et Voir Dashboard"; sB.className = 'w-full text-lg font-bold py-3 px-5 rounded-lg transition-all duration-300 shadow-lg bg-teal-600 hover:bg-teal-500 text-white shadow-teal-800/40 cursor-pointer'; 
                 } else { 
-                    sB.textContent = "Remplir les infos et valider la checklist"; sB.className = 'button-disabled'; 
+                    sB.textContent = "Remplir les informations"; sB.className = 'button-disabled'; 
                 } 
             }
             const today = new Date().toISOString().split('T')[0]; dI.value = today; tI.value = "09:00";
             fN.addEventListener('input', uSBS); lN.addEventListener('input', uSBS); dI.addEventListener('input', uSBS); tI.addEventListener('input', uSBS);
-            chkNature.addEventListener('change', uSBS); chkFormat.addEventListener('change', uSBS); chkCoaching.addEventListener('change', uSBS); chkDiscipline.addEventListener('change', uSBS); chkEquipment.addEventListener('change', uSBS); chkInvestment.addEventListener('change', uSBS);
             
             sB.addEventListener('click', async () => { 
                 if (isSaving || !db) return; isSaving = true; uSBS(); 
@@ -179,13 +146,7 @@
                             lastUpdatedAt: Timestamp.now(), 
                             closerId: auth?.currentUser?.uid || 'anonymous_user', 
                             status: 'R1 Scheduled', 
-                            notes: "",
-                            prequal_nature: chkNature.checked,
-                            prequal_format: chkFormat.checked,
-                            prequal_coaching: chkCoaching.checked,
-                            prequal_discipline: chkDiscipline.checked,
-                            prequal_equipment: chkEquipment.checked,
-                            prequal_investment: chkInvestment.checked
+                            notes: ""
                         }; 
                         await addDoc(collection(db, cP), nD); 
                         showFeedback("R1 Planifié enregistré.", false); 
