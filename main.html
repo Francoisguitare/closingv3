@@ -54,7 +54,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 10px; border: 2px solid #1f2937; }
         #appFeedback { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); padding: 0.75rem 1.25rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); color: white; font-weight: 600; font-size: 0.875rem; z-index: 50; transition: opacity 300ms ease-in-out; opacity: 0; pointer-events: none; }
         #appFeedback.show { opacity: 1; pointer-events: auto; }
-
+        label { cursor: pointer; display: block; }
         /* Tooltip customisé */
         .tooltip-container {
             position: relative;
@@ -189,7 +189,42 @@
                         <textarea id="why3Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="En quoi le fait d'atteindre son objectif impacterait sa vision de lui-même ? Qui deviendrait-il ?"></textarea>
                     </div>
 
-                    <!-- Étape 5: Récap Pré-qualification -->
+                    <div class="flex justify-center">
+                        <svg class="w-8 h-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
+                    </div>
+
+                    <!-- Étape 5: Checklist de Fin d'Appel R1 -->
+                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
+                        <h3 class="text-lg font-semibold text-teal-300 mb-4">Checklist de Fin d'Appel R1</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <input id="checklistNature" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
+                                <label for="checklistNature" class="text-gray-300">Nature: Formation intensive 9 mois</label>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <input id="checklistFormat" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
+                                <label for="checklistFormat" class="text-gray-300">Format: Parcours linéaire/séquentiel</label>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <input id="checklistCoaching" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
+                                <label for="checklistCoaching" class="text-gray-300">Coaching: Envoi vidéos WhatsApp quotidien</label>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <input id="checklistDiscipline" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
+                                <label for="checklistDiscipline" class="text-gray-300">Discipline: Engagement sur 9 mois fermes</label>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <input id="checklistEquipment" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
+                                <label for="checklistEquipment" class="text-gray-300">Équipement: Guitare + Smartphone/PC OK</label>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <input id="checklistInvestment" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
+                                <label for="checklistInvestment" class="font-semibold text-white">Investissement: Budget 2300-2900€ validé</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Étape 6: Récap Pré-qualification -->
                     <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
                         <h3 class="text-lg font-semibold text-gray-400 mb-4">Récapitulatif Pré-qualification R1</h3>
                         <div id="prequalRecapList" class="space-y-3 text-sm">
@@ -240,6 +275,12 @@
             const saveButton = document.getElementById('saveAndQuitButton');
             const autosaveStatusEl = document.getElementById('autosaveStatus');
             const prequalRecapList = document.getElementById('prequalRecapList');
+            const checklistNature = document.getElementById('checklistNature');
+            const checklistFormat = document.getElementById('checklistFormat');
+            const checklistCoaching = document.getElementById('checklistCoaching');
+            const checklistDiscipline = document.getElementById('checklistDiscipline');
+            const checklistEquipment = document.getElementById('checklistEquipment');
+            const checklistInvestment = document.getElementById('checklistInvestment');
 
             if (!docId) {
                 showAppFeedback("ID de prospect manquant dans l'URL.", true);
@@ -268,6 +309,14 @@
                     why1Textarea.value = docData.why1 || '';
                     why2Textarea.value = docData.why2 || '';
                     why3Textarea.value = docData.why3 || '';
+
+                    // Load checklist data
+                    checklistNature.checked = docData.checklist_nature || false;
+                    checklistFormat.checked = docData.checklist_format || false;
+                    checklistCoaching.checked = docData.checklist_coaching || false;
+                    checklistDiscipline.checked = docData.checklist_discipline || false;
+                    checklistEquipment.checked = docData.checklist_equipment || false;
+                    checklistInvestment.checked = docData.checklist_investment || false;
 
                     // Populate Prequalification Recap
                     if (prequalRecapList) {
@@ -329,6 +378,12 @@
                         why1: why1Textarea.value,
                         why2: why2Textarea.value,
                         why3: why3Textarea.value,
+                        checklist_nature: checklistNature.checked,
+                        checklist_format: checklistFormat.checked,
+                        checklist_coaching: checklistCoaching.checked,
+                        checklist_discipline: checklistDiscipline.checked,
+                        checklist_equipment: checklistEquipment.checked,
+                        checklist_investment: checklistInvestment.checked,
                         lastUpdatedAt: Timestamp.now()
                     });
                     autosaveStatusEl.textContent = 'Enregistré';
@@ -351,6 +406,12 @@
             why1Textarea.addEventListener('input', debouncedAutosave);
             why2Textarea.addEventListener('input', debouncedAutosave);
             why3Textarea.addEventListener('input', debouncedAutosave);
+            checklistNature.addEventListener('change', debouncedAutosave);
+            checklistFormat.addEventListener('change', debouncedAutosave);
+            checklistCoaching.addEventListener('change', debouncedAutosave);
+            checklistDiscipline.addEventListener('change', debouncedAutosave);
+            checklistEquipment.addEventListener('change', debouncedAutosave);
+            checklistInvestment.addEventListener('change', debouncedAutosave);
 
             // --- SAVE & QUIT ---
             const saveAndQuit = async () => {
