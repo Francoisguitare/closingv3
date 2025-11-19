@@ -1,192 +1,93 @@
 
-<!DOCTYPE html>
-<html lang="fr" class="h-full">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grille de Qualification R1</title>
-    <!-- Script Tailwind CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- SDK Firebase -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        
-        let db, auth, appId, userId;
-        const firebaseReadyPromise = new Promise((resolve) => {
-            try {
-                const firebaseConfig = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" };
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) { userId = user.uid; } 
-                    else { try { await signInAnonymously(auth); } catch (e) { console.error("Err anon:", e); } }
-                    window.firebaseServices = { db, auth, appId, doc, getDoc, updateDoc, Timestamp };
-                    console.log("Firebase is ready.");
-                    resolve();
-                });
-            } catch (error) {
-                console.error("Err init Firebase:", error);
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'fixed top-0 left-0 w-full p-4 bg-red-800 text-white text-center z-[100]';
-                errorDiv.textContent = 'Erreur critique: Connexion DB impossible.';
-                document.body.prepend(errorDiv);
-                window.firebaseServices = { db: null }; // FIX: Prevent crash by setting db to null
-                resolve(); // Resolve anyway to allow the main script to handle the error
-            }
-        });
-        window.firebaseReadyPromise = firebaseReadyPromise;
-    </script>
-
-    <!-- Styles CSS -->
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #475569 #1f2937; }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; border-radius: 10px; border: 2px solid #1f2937; }
-        #appFeedback { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); padding: 0.75rem 1.25rem; border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); color: white; font-weight: 600; font-size: 0.875rem; z-index: 50; transition: opacity 300ms ease-in-out; opacity: 0; pointer-events: none; }
-        #appFeedback.show { opacity: 1; pointer-events: auto; }
-        label { cursor: pointer; display: block; }
-        /* Tooltip customisé */
-        .tooltip-container {
-            position: relative;
-            display: inline-block;
-        }
-        .tooltip-container .tooltip-text {
-            visibility: hidden;
-            width: 380px; /* Increased width */
-            background-color: #1e293b; /* slate-800 */
-            color: #fff;
-            text-align: left;
-            border-radius: 6px;
-            padding: 12px 16px;
-            position: absolute;
-            z-index: 10;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -190px; /* Centered */
-            opacity: 0;
-            transition: opacity 0.3s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border: 1px solid #334155; /* slate-700 */
-            pointer-events: none;
-        }
-        .tooltip-container:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-    </style>
-
-</head>
-<body class="bg-gradient-to-b from-gray-900 to-slate-900 text-white h-full overflow-hidden font-[Inter,sans-serif]">
-
-    <div id="app" class="h-full">
-        <!-- Écran de chargement -->
-        <div id="loadingScreen" class="h-full w-full flex flex-col items-center justify-center text-gray-400">
-            <svg class="w-12 h-12 animate-spin text-teal-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <p>Chargement du prospect...</p>
-        </div>
-        
-        <!-- ÉCRAN PRINCIPAL -->
-        <div id="mainScreen" class="hidden h-full p-4 md:p-6 w-full max-w-4xl mx-auto flex flex-col">
-            <!-- Header -->
-            <header class="flex justify-between items-center mb-4 flex-shrink-0">
-                <h2 class="text-2xl font-semibold text-gray-300">Analyse R1: <span id="mainProspectName" class="text-white font-bold"></span></h2>
-                <div class="flex items-center space-x-3">
-                    <span id="autosaveStatus" class="text-sm text-gray-400 transition-opacity duration-500 opacity-0 mr-2"></span>
-                    <a href="./index.html" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 text-sm rounded-lg transition-colors duration-200">
-                        Annuler
-                    </a>
-                    <button id="saveAndQuitButton" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 text-sm rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-wait">
-                        Save & Quitter
-                    </button>
-                </div>
-            </header>
-
-            <!-- Contenu Principal (Flux de conversation) -->
-            <div class="flex-grow overflow-y-auto custom-scrollbar pr-4 -mr-4">
-                <div class="space-y-6">
-                    <!-- Étape 1: Situation Actuelle -->
-                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
-                        <label for="notesTextarea" class="text-lg font-semibold text-teal-300 mb-3 block">Situation Actuelle</label>
-                        <textarea id="notesTextarea" rows="8" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-3 px-4 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 custom-scrollbar" placeholder="Décrire la situation présente du prospect, ses frustrations, ce qu'il a déjà essayé..."></textarea>
-                    </div>
-
                     <div class="flex justify-center">
                         <svg class="w-8 h-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
                     </div>
 
-                    <!-- Étape 2: Pourquoi #1 -->
-                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
-                        <div class="flex items-center gap-2 mb-3">
-                            <label for="why1Textarea" class="text-lg font-semibold text-sky-300">Objectifs (Pourquoi #1 - La Surface)</label>
-                            <div class="tooltip-container">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-white cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span class="tooltip-text">
-                                    <strong class="text-sky-300 block mb-2">P1 : L'Objectif Logique (Le "QUOI")</strong>
-                                    <p class="text-sm text-gray-300 mb-3"><strong>But :</strong> Identifier l'objectif visible et conscient du prospect.</p>
-                                    <p class="text-sm text-gray-400 mb-1"><strong>Questions-types :</strong></p>
-                                    <ul class="list-disc list-inside text-xs text-gray-400 pl-2 mb-3"><li>"Concrètement, qu'est-ce qui t'amène ?"</li><li>"Quel objectif principal voudrais-tu atteindre ?"</li></ul>
-                                    <p class="text-sm text-gray-400 mb-1"><strong>Réponses cherchées :</strong></p>
-                                    <ul class="list-disc list-inside text-xs text-gray-400 pl-2"><li>"Je veux jouer les morceaux de X."</li><li>"J'aimerais pouvoir improviser."</li></ul>
-                                </span>
+                    <!-- Étape 4.5: ASSISTANT CLOSING (NOUVEAU) -->
+                    <div class="bg-gradient-to-br from-indigo-900/80 to-slate-800 border border-indigo-500/50 p-6 rounded-xl shadow-2xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 -mt-2 -mr-2 w-24 h-24 bg-indigo-500 opacity-10 rounded-full blur-xl"></div>
+                        
+                        <h3 class="text-xl font-bold text-indigo-300 mb-6 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            Assistant de Closing
+                        </h3>
+
+                        <!-- 1. La Transition -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">1. La Transition (Lire mot à mot)</h4>
+                            <div class="bg-indigo-900/30 p-4 rounded-lg border-l-4 border-indigo-500 text-gray-200 italic text-lg leading-relaxed">
+                                "Écoute [Prénom], d'après ce que tu me dis, tu veux vraiment <span class="text-white font-bold not-italic">[relire P1/P3]</span>, mais aujourd'hui tu es bloqué par <span class="text-white font-bold not-italic">[relire P2]</span>.<br><br>
+                                Honnêtement, vu ta motivation, la GIA est exactement ce qu'il te faut pour atteindre cet objectif en 9 mois. Est-ce que tu veux que je t'explique comment ça marche ?"
                             </div>
                         </div>
-                        <textarea id="why1Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="Quelle est la raison initiale et logique qui le pousse à vouloir changer ? Qu'est-ce qu'il veut accomplir ?"></textarea>
-                    </div>
-                    
-                    <div class="flex justify-center">
-                         <svg class="w-8 h-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
-                    </div>
 
-                    <!-- Étape 3: Pourquoi #2 -->
-                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
-                         <div class="flex items-center gap-2 mb-3">
-                            <label for="why2Textarea" class="text-lg font-semibold text-sky-300">L'Émotion (Pourquoi #2)</label>
-                            <div class="tooltip-container">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-white cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span class="tooltip-text">
-                                    <strong class="text-sky-300 block mb-2">P2 : La Frustration (Le "POURQUOI ÇA FAIT MAL")</strong>
-                                    <p class="text-sm text-gray-300 mb-3"><strong>But :</strong> Mettre le doigt sur la douleur émotionnelle qui motive le changement.</p>
-                                    <p class="text-sm text-gray-400 mb-1"><strong>Questions-types :</strong></p>
-                                    <ul class="list-disc list-inside text-xs text-gray-400 pl-2 mb-3"><li>"Qu'est-ce que ça te fait de ne pas y arriver ?"</li><li>"Quelle est ta plus grande frustration ?"</li></ul>
-                                    <p class="text-sm text-gray-400 mb-1"><strong>Réponses cherchées (négatives) :</strong></p>
-                                    <ul class="list-disc list-inside text-xs text-gray-400 pl-2"><li>"Je suis frustré de stagner."</li><li>"Je me sens nul de ne pas réussir."</li></ul>
-                                </span>
+                        <!-- 2. L'Annonce du Prix -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">2. L'Annonce du Prix (L'Ancrage)</h4>
+                            <div class="bg-slate-900/50 p-4 rounded-lg text-gray-300 space-y-2">
+                                <p>1. Rappeler la valeur : <span class="text-gray-500 italic">"Si tu prenais des cours particuliers pendant 9 mois + le matériel + le coaching 7j/7, ça te coûterait plus de 5000€."</span></p>
+                                <p>2. Annoncer le prix : <span class="text-white font-bold text-lg">"L'investissement pour la formation complète est de 2300€."</span></p>
+                                <p>3. <span class="text-red-400 font-bold uppercase">SE TAIRE.</span> (Le premier qui parle a perdu).</p>
                             </div>
                         </div>
-                        <textarea id="why2Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="Quel est le sentiment, la frustration cachée derrière l'objectif ? Qu'est-ce que ça lui fait de ne pas y arriver ?"></textarea>
-                    </div>
 
-                    <div class="flex justify-center">
-                        <svg class="w-8 h-8 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>
-                    </div>
+                        <!-- 3. Gestion des Objections (Accordéon) -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">3. Anti-Sèche Objections (Cliquer pour ouvrir)</h4>
+                            <div class="space-y-2">
+                                <!-- Objection: C'est cher -->
+                                <details class="group">
+                                    <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-slate-700 p-3 rounded-lg text-white hover:bg-slate-600 transition-colors">
+                                        <span>💰 "C'est trop cher / J'ai pas le budget"</span>
+                                        <span class="transition group-open:rotate-180"><svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg></span>
+                                    </summary>
+                                    <div class="text-gray-300 mt-2 mb-4 px-3 text-sm bg-slate-800/50 p-3 rounded border border-slate-600">
+                                        <p class="mb-2 font-bold text-indigo-300">Réponse : Recadrer Investissement vs Dépense.</p>
+                                        <p class="italic mb-2">"Je comprends. C'est une somme. Mais dis-moi, <span class="font-bold text-white">combien ça te coûte (en temps et frustration) de ne PAS régler ce problème</span> et de rester au même niveau dans un an ?"</p>
+                                        <p class="italic">"Si ce programme te permettait vraiment de [P3: Devenir ce musicien], est-ce que le prix serait un problème ?"</p>
+                                    </div>
+                                </details>
 
-                    <!-- Étape 4: Pourquoi #3 -->
-                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
-                        <div class="flex items-center gap-2 mb-3">
-                            <label for="why3Textarea" class="text-lg font-semibold text-sky-300">L'Identité (Pourquoi #3)</label>
-                            <div class="tooltip-container">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hover:text-white cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span class="tooltip-text">
-                                    <strong class="text-sky-300 block mb-2">P3 : La Transformation (Le "QUI JE DEVIENS")</strong>
-                                    <p class="text-sm text-gray-300 mb-3"><strong>But :</strong> Révéler la vision idéale de lui-même, son aspiration profonde.</p>
-                                    <p class="text-sm text-gray-400 mb-1"><strong>Questions-types :</strong></p>
-                                    <ul class="list-disc list-inside text-xs text-gray-400 pl-2 mb-3"><li>"Qu'est-ce que ça changerait dans ta vision de toi-même ?"</li><li>"Qui deviendrais-tu ?"</li></ul>
-                                    <p class="text-sm text-gray-400 mb-1"><strong>Réponses cherchées (positives, futur) :</strong></p>
-                                    <ul class="list-disc list-inside text-xs text-gray-400 pl-2"><li>"Je serais quelqu'un qui va au bout de ses projets."</li><li>"Je me verrais comme un vrai musicien."</li></ul>
-                                </span>
+                                <!-- Objection: Je dois réfléchir -->
+                                <details class="group">
+                                    <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-slate-700 p-3 rounded-lg text-white hover:bg-slate-600 transition-colors">
+                                        <span>🤔 "Je dois réfléchir"</span>
+                                        <span class="transition group-open:rotate-180"><svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg></span>
+                                    </summary>
+                                    <div class="text-gray-300 mt-2 mb-4 px-3 text-sm bg-slate-800/50 p-3 rounded border border-slate-600">
+                                        <p class="mb-2 font-bold text-indigo-300">Réponse : Isoler l'hésitation.</p>
+                                        <p class="italic mb-2">"C'est normal. Généralement quand on veut réfléchir, c'est qu'on n'est pas sûr de quelque chose. <span class="font-bold text-white">Honnêtement, c'est le programme ou c'est l'argent qui te fait hésiter ?</span>"</p>
+                                        <p class="italic">"On réfléchit pour prendre une décision. Si tu n'as pas toutes les infos maintenant, tu ne les auras pas plus demain seul dans ton canapé. Qu'est-ce qui t'inquiète ?"</p>
+                                    </div>
+                                </details>
+
+                                <!-- Objection: Conjoint -->
+                                <details class="group">
+                                    <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-slate-700 p-3 rounded-lg text-white hover:bg-slate-600 transition-colors">
+                                        <span>💍 "Je dois en parler à ma femme/mari"</span>
+                                        <span class="transition group-open:rotate-180"><svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg></span>
+                                    </summary>
+                                    <div class="text-gray-300 mt-2 mb-4 px-3 text-sm bg-slate-800/50 p-3 rounded border border-slate-600">
+                                        <p class="mb-2 font-bold text-indigo-300">Réponse : Valider le soutien.</p>
+                                        <p class="italic mb-2">"Bien sûr. D'après toi, <span class="font-bold text-white">si c'était gratuit, qu'est-ce qu'elle te dirait ?</span>"</p>
+                                        <p class="italic mb-2">(Si elle dirait oui) : "Donc le problème ce n'est pas ta femme, c'est l'argent. Comment on peut faire pour que ça passe ?"</p>
+                                        <p class="italic">(Si elle est sceptique) : "Qu'est-ce qui lui ferait peur ? Que tu abandonnes encore ? Justement, la GIA est faite pour t'empêcher d'abandonner."</p>
+                                    </div>
+                                </details>
+
+                                 <!-- Objection: Pas le temps -->
+                                 <details class="group">
+                                    <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-slate-700 p-3 rounded-lg text-white hover:bg-slate-600 transition-colors">
+                                        <span>⏳ "J'ai pas le temps en ce moment"</span>
+                                        <span class="transition group-open:rotate-180"><svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg></span>
+                                    </summary>
+                                    <div class="text-gray-300 mt-2 mb-4 px-3 text-sm bg-slate-800/50 p-3 rounded border border-slate-600">
+                                        <p class="mb-2 font-bold text-indigo-300">Réponse : Priorité vs Temps.</p>
+                                        <p class="italic mb-2">"Le moment parfait n'existe pas. Si tu attends d'avoir du temps libre, tu ne le feras jamais. <span class="font-bold text-white">Est-ce que 20 minutes par jour, c'est vraiment impossible à trouver</span> pour réaliser [P1] ?"</p>
+                                    </div>
+                                </details>
                             </div>
                         </div>
-                        <textarea id="why3Textarea" rows="5" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-base text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sky-400 custom-scrollbar" placeholder="En quoi le fait d'atteindre son objectif impacterait sa vision de lui-même ? Qui deviendrait-il ?"></textarea>
                     </div>
 
                     <div class="flex justify-center">
@@ -195,250 +96,3 @@
 
                     <!-- Étape 5: Checklist de Fin d'Appel R1 -->
                     <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
-                        <h3 class="text-lg font-semibold text-teal-300 mb-4">Checklist de Fin d'Appel R1</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center gap-3">
-                                <input id="checklistNature" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                                <label for="checklistNature" class="text-gray-300">Nature: Formation intensive 9 mois</label>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <input id="checklistFormat" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                                <label for="checklistFormat" class="text-gray-300">Format: Parcours linéaire/séquentiel</label>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <input id="checklistCoaching" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                                <label for="checklistCoaching" class="text-gray-300">Coaching: Envoi vidéos WhatsApp quotidien</label>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <input id="checklistDiscipline" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                                <label for="checklistDiscipline" class="text-gray-300">Discipline: Engagement sur 9 mois fermes</label>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <input id="checklistEquipment" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                                <label for="checklistEquipment" class="text-gray-300">Équipement: Guitare + Smartphone/PC OK</label>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <input id="checklistInvestment" type="checkbox" class="h-4 w-4 rounded border-gray-400 bg-slate-700 text-teal-500 focus:ring-teal-400">
-                                <label for="checklistInvestment" class="font-semibold text-white">Investissement: Budget 2300-2900€ validé</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Étape 6: Récap Pré-qualification -->
-                    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 p-5 rounded-xl shadow-lg">
-                        <h3 class="text-lg font-semibold text-gray-400 mb-4">Récapitulatif Pré-qualification R1</h3>
-                        <div id="prequalRecapList" class="space-y-3 text-sm">
-                            <!-- Items will be generated by JS -->
-                            <p class="text-gray-500">Chargement du récapitulatif...</p>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Feedback Element -->
-    <div id="appFeedback"></div>
-
-    <script type="module">
-        function showAppFeedback(message, isError = false) {
-            const feedbackEl = document.getElementById('appFeedback');
-            if (!feedbackEl) return;
-            feedbackEl.textContent = message;
-            feedbackEl.className = 'show';
-            feedbackEl.classList.add(isError ? 'bg-red-600' : 'bg-green-600');
-            setTimeout(() => { feedbackEl.className = 'opacity-0'; }, 3000);
-        }
-
-        function debounce(func, delay = 1500) {
-            let timeoutId;
-            return function(...args) {
-                clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => {
-                    func.apply(this, args);
-                }, delay);
-            };
-        }
-
-        (async () => {
-            const params = new URLSearchParams(window.location.search);
-            const docId = params.get('docId');
-            
-            const mainScreen = document.getElementById('mainScreen');
-            const loadingScreen = document.getElementById('loadingScreen');
-            const prospectNameEl = document.getElementById('mainProspectName');
-            const notesTextarea = document.getElementById('notesTextarea');
-            const why1Textarea = document.getElementById('why1Textarea');
-            const why2Textarea = document.getElementById('why2Textarea');
-            const why3Textarea = document.getElementById('why3Textarea');
-            const saveButton = document.getElementById('saveAndQuitButton');
-            const autosaveStatusEl = document.getElementById('autosaveStatus');
-            const prequalRecapList = document.getElementById('prequalRecapList');
-            const checklistNature = document.getElementById('checklistNature');
-            const checklistFormat = document.getElementById('checklistFormat');
-            const checklistCoaching = document.getElementById('checklistCoaching');
-            const checklistDiscipline = document.getElementById('checklistDiscipline');
-            const checklistEquipment = document.getElementById('checklistEquipment');
-            const checklistInvestment = document.getElementById('checklistInvestment');
-
-            if (!docId) {
-                showAppFeedback("ID de prospect manquant dans l'URL.", true);
-                loadingScreen.innerHTML = '<p class="text-red-400">Erreur: ID de prospect non trouvé.</p>';
-                return;
-            }
-
-            await window.firebaseReadyPromise;
-            const { db, appId, doc, getDoc, updateDoc, Timestamp } = window.firebaseServices;
-
-            if (!db) {
-                showAppFeedback("La connexion à la base de données a échoué.", true);
-                loadingScreen.innerHTML = '<p class="text-red-400">Erreur: Connexion DB impossible.</p>';
-                return;
-            }
-
-            // --- DATA LOADING ---
-            try {
-                const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const docData = docSnap.data();
-                    prospectNameEl.textContent = docData.prospectName || 'Prospect inconnu';
-                    notesTextarea.value = docData.notes || '';
-                    why1Textarea.value = docData.why1 || '';
-                    why2Textarea.value = docData.why2 || '';
-                    why3Textarea.value = docData.why3 || '';
-
-                    // Load checklist data
-                    checklistNature.checked = docData.checklist_nature || false;
-                    checklistFormat.checked = docData.checklist_format || false;
-                    checklistCoaching.checked = docData.checklist_coaching || false;
-                    checklistDiscipline.checked = docData.checklist_discipline || false;
-                    checklistEquipment.checked = docData.checklist_equipment || false;
-                    checklistInvestment.checked = docData.checklist_investment || false;
-
-                    // Populate Prequalification Recap
-                    if (prequalRecapList) {
-                        const prequalItems = [
-                            { key: 'prequal_nature', label: 'Nature: Formation intensive 9 mois' },
-                            { key: 'prequal_format', label: 'Format: Parcours linéaire/séquentiel' },
-                            { key: 'prequal_coaching', label: 'Coaching: Envoi vidéos WhatsApp quotidien' },
-                            { key: 'prequal_discipline', label: 'Discipline: Engagement sur 9 mois fermes' },
-                            { key: 'prequal_equipment', label: 'Équipement: Guitare + Smartphone/PC OK' },
-                            { key: 'prequal_investment', label: 'Investissement: Budget 2300-2900€ validé' }
-                        ];
-
-                        let content = '';
-                        let hasPrequalData = prequalItems.some(item => docData[item.key] !== undefined);
-
-                        if (hasPrequalData) {
-                             prequalItems.forEach(item => {
-                                const isChecked = docData[item.key] === true;
-                                const icon = isChecked 
-                                    ? `<svg class="w-5 h-5 text-green-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>`
-                                    : `<svg class="w-5 h-5 text-red-400 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>`;
-                                const labelClass = item.key === 'prequal_investment' ? 'font-semibold text-white' : 'text-gray-300';
-                                content += `<div class="flex items-center gap-3">${icon}<span class="${labelClass}">${item.label}</span></div>`;
-                            });
-                        } else {
-                            content = '<p class="text-gray-500 italic">Aucune donnée de pré-qualification enregistrée pour ce prospect.</p>';
-                        }
-                        prequalRecapList.innerHTML = content;
-                    }
-                    
-                    mainScreen.classList.remove('hidden');
-                    loadingScreen.classList.add('hidden');
-                } else {
-                    showAppFeedback("Erreur: Prospect non trouvé.", true);
-                    prospectNameEl.textContent = "Erreur";
-                    mainScreen.classList.remove('hidden');
-                    loadingScreen.classList.add('hidden');
-                }
-            } catch (error) {
-                console.error("Error loading prospect data: ", error);
-                showAppFeedback("Erreur de chargement des données du prospect.", true);
-                prospectNameEl.textContent = "Erreur de chargement";
-                mainScreen.classList.remove('hidden');
-                loadingScreen.classList.add('hidden');
-            }
-
-            // --- AUTOSAVE LOGIC ---
-            let isSavingAutosave = false;
-            const performAutosave = async () => {
-                if (isSavingAutosave) return;
-                isSavingAutosave = true;
-                autosaveStatusEl.textContent = 'Sauvegarde...';
-                autosaveStatusEl.classList.remove('opacity-0', 'text-red-400');
-
-                try {
-                    const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
-                    await updateDoc(docRef, {
-                        notes: notesTextarea.value,
-                        why1: why1Textarea.value,
-                        why2: why2Textarea.value,
-                        why3: why3Textarea.value,
-                        checklist_nature: checklistNature.checked,
-                        checklist_format: checklistFormat.checked,
-                        checklist_coaching: checklistCoaching.checked,
-                        checklist_discipline: checklistDiscipline.checked,
-                        checklist_equipment: checklistEquipment.checked,
-                        checklist_investment: checklistInvestment.checked,
-                        lastUpdatedAt: Timestamp.now()
-                    });
-                    autosaveStatusEl.textContent = 'Enregistré';
-                    setTimeout(() => autosaveStatusEl.classList.add('opacity-0'), 2000);
-                } catch (error) {
-                    console.error("Autosave error:", error);
-                    autosaveStatusEl.textContent = 'Erreur sauvegarde';
-                    autosaveStatusEl.classList.add('text-red-400');
-                    setTimeout(() => {
-                        autosaveStatusEl.classList.add('opacity-0');
-                        autosaveStatusEl.classList.remove('text-red-400');
-                    }, 3000);
-                } finally {
-                    isSavingAutosave = false;
-                }
-            };
-
-            const debouncedAutosave = debounce(performAutosave, 1500);
-            notesTextarea.addEventListener('input', debouncedAutosave);
-            why1Textarea.addEventListener('input', debouncedAutosave);
-            why2Textarea.addEventListener('input', debouncedAutosave);
-            why3Textarea.addEventListener('input', debouncedAutosave);
-            checklistNature.addEventListener('change', debouncedAutosave);
-            checklistFormat.addEventListener('change', debouncedAutosave);
-            checklistCoaching.addEventListener('change', debouncedAutosave);
-            checklistDiscipline.addEventListener('change', debouncedAutosave);
-            checklistEquipment.addEventListener('change', debouncedAutosave);
-            checklistInvestment.addEventListener('change', debouncedAutosave);
-
-            // --- SAVE & QUIT ---
-            const saveAndQuit = async () => {
-                if (!saveButton) return;
-
-                saveButton.disabled = true;
-                saveButton.textContent = 'Sauvegarde...';
-
-                try {
-                    // Perform a final, non-debounced save
-                    await performAutosave();
-                    showAppFeedback("Modifications enregistrées.", false);
-                    setTimeout(() => {
-                        window.location.href = './index.html';
-                    }, 500); // Shorter delay as autosave already ran
-                } catch (error) {
-                    console.error("Save and quit error:", error);
-                    showAppFeedback("Erreur de sauvegarde.", true);
-                    saveButton.disabled = false;
-                    saveButton.textContent = 'Save & Quitter';
-                }
-            };
-
-            if (saveButton) {
-                saveButton.addEventListener('click', saveAndQuit);
-            }
-        })();
-    </script>
-</body>
-</html>
