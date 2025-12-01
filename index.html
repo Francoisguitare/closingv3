@@ -165,7 +165,7 @@
                     <!-- Navigation Mois -->
                     <div class="flex items-center bg-slate-700 rounded-md mr-2">
                         <button id="prevMonthBtn" class="px-3 py-1 text-gray-300 hover:text-white hover:bg-slate-600 rounded-l-md transition-colors" title="Mois précédent">&lt;</button>
-                        <button data-days="month" class="date-shortcut active px-3 py-1 border-x border-slate-600">Ce mois-ci</button>
+                        <button data-days="month" class="date-shortcut active px-3 py-1 border-x border-slate-600 min-w-[100px]">Ce mois-ci</button>
                         <button id="nextMonthBtn" class="px-3 py-1 text-gray-300 hover:text-white hover:bg-slate-600 rounded-r-md transition-colors" title="Mois suivant">&gt;</button>
                     </div>
 
@@ -966,6 +966,7 @@
             if (monthBtn) monthBtn.classList.add('active');
 
             renderFilteredData();
+            updateCurrentMonthLabel();
         }
 
         function setupFiltersAndLoad() {
@@ -1013,6 +1014,7 @@
                 const sUTC = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()));
                 const eUTC = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()));
                 setDates(sUTC, eUTC);
+                updateCurrentMonthLabel();
                 renderFilteredData();
             }
             shortcuts.addEventListener('click', handleShortcutClick);
@@ -1025,6 +1027,7 @@
                 shortcuts.querySelectorAll('button:not(#prevMonthBtn):not(#nextMonthBtn)').forEach(btn => btn.classList.remove('active'));
                 if (s.value && e.value) {
                     renderFilteredData();
+                    updateCurrentMonthLabel();
                 }
             }
 
@@ -1033,6 +1036,20 @@
 
             const monthShortcut = shortcuts.querySelector('button[data-days="month"]');
             if (monthShortcut) monthShortcut.click();
+        }
+
+        function updateCurrentMonthLabel() {
+            const sInput = document.getElementById('startDate');
+            const mBtn = document.querySelector('button[data-days="month"]');
+            if (sInput && sInput.value && mBtn) {
+                const d = parseDateString(sInput.value);
+                if (d) {
+                    // Force le 1er du mois pour éviter les décalages de timezone sur le nom du mois
+                    const dateForLabel = new Date(d.getFullYear(), d.getMonth(), 1);
+                    const label = dateForLabel.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                    mBtn.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+                }
+            }
         }
         
         function displayError(message, isError = false) { let d=document.getElementById('dashboardError');if(!d){d=document.createElement('div');d.id='dashboardError';d.className='fixed bottom-4 right-4 p-4 bg-red-800 text-white rounded-lg shadow-xl z-[60]';document.body.appendChild(d);} if (isError) { d.classList.remove('bg-green-600'); d.classList.add('bg-red-800'); } else { d.classList.remove('bg-red-800'); d.classList.add('bg-green-600'); } d.textContent=message;setTimeout(()=>d.remove(),3000); }
