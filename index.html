@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="fr" class="h-full">
 <head>
@@ -62,7 +63,10 @@
             .kpi-chart-active { @apply ring-2 ring-offset-2 ring-offset-slate-900 ring-white/70 opacity-100; }
             .kpi-card-toggle:not(.kpi-chart-active) { @apply opacity-60 hover:opacity-100; }
             .kpi-card-static { @apply bg-slate-800/80 backdrop-blur-sm border border-slate-700 p-3 rounded-lg shadow-lg text-center transition-all duration-300 relative overflow-hidden border-t-2; }
-        
+            
+            /* Settings Visibility */
+            .kpi-hidden-by-settings { display: none !important; }
+
             /* Case à cocher customisée */
             .custom-checkbox {
                 @apply w-5 h-5 rounded border-2 border-slate-500 bg-slate-700 text-teal-500 shadow-sm focus:ring-teal-400 focus:ring-offset-slate-800;
@@ -116,6 +120,12 @@
         <header class="flex flex-col md:flex-row justify-between items-center mb-2">
             <h1 class="text-3xl font-bold text-teal-300 mb-4 md:mb-0">Tableau de Bord GIA</h1>
             <div class="flex items-center space-x-4">
+                <button id="openSettingsBtn" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-300 hover:text-white transition-colors" title="Paramètres d'affichage">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
                 <a href="fomo_tracker.html" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-5 rounded-lg transition-all duration-300 shadow-lg shadow-purple-800/40">Suivi Offres FOMO</a>
                 <a href="dashboard.html" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-5 rounded-lg transition-all duration-300 shadow-lg shadow-teal-800/40"> + Planifier R1 </a>
             </div>
@@ -152,30 +162,36 @@
 
                 <!-- Côté droit: Raccourcis -->
                 <div id="dateShortcuts" class="flex flex-wrap items-center gap-x-2 gap-y-2">
+                    <!-- Navigation Mois -->
+                    <div class="flex items-center bg-slate-700 rounded-md mr-2">
+                        <button id="prevMonthBtn" class="px-3 py-1 text-gray-300 hover:text-white hover:bg-slate-600 rounded-l-md transition-colors" title="Mois précédent">&lt;</button>
+                        <button data-days="month" class="date-shortcut active px-3 py-1 border-x border-slate-600">Ce mois-ci</button>
+                        <button id="nextMonthBtn" class="px-3 py-1 text-gray-300 hover:text-white hover:bg-slate-600 rounded-r-md transition-colors" title="Mois suivant">&gt;</button>
+                    </div>
+
                     <button data-days="0" class="date-shortcut">Aujourd'hui</button>
                     <button data-days="7" class="date-shortcut">7 Jours</button>
                     <button data-days="14" class="date-shortcut">14 Jours</button>
                     <button data-days="30" class="date-shortcut">30 Jours</button>
                     <button data-days="90" class="date-shortcut">90 Jours</button>
-                    <button data-days="month" class="date-shortcut active">Ce mois-ci</button>
                 </div>
             </div>
         </section>
 
         <!-- KPIs -->
-        <section class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+        <section class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3" id="kpiContainer">
              <!-- Ligne 1: Tunnel R1 -->
              <div id="kpi-card-r1-planned" class="kpi-card-toggle kpi-card-static border-t-amber-500"><span id="kpiR1Planned" class="text-3xl font-bold text-amber-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R1 Planifiés</span></div>
              <div id="kpi-card-disqualified" class="kpi-card-toggle kpi-card-static border-t-orange-600"><span id="kpiDisqualifiedCount" class="text-3xl font-bold text-orange-400 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Disqualifiés</span></div>
              <div id="kpi-card-r1-noshow" class="kpi-card-toggle kpi-card-static border-t-red-500"><span id="kpi-target-r1-noshow" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">~30%</span><div class="flex items-center justify-center"><span id="kpiR1NoShowRate" class="text-3xl font-bold text-red-400 block">0%</span><span id="kpiR1NoShowCount" class="kpi-secondary-value text-red-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R1</span></div>
              <div id="kpi-card-r1-completed" class="kpi-card-toggle kpi-card-static border-t-blue-500"><span id="kpiR1Completed" class="text-3xl font-bold text-blue-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R1 Effectués</span></div>
-             <div class="kpi-card-static border-t-teal-500"><span id="kpi-target-r1-to-r2" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">35%</span><div class="flex items-center justify-center"><span id="kpiR1toR2Rate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1toR2Count" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Eff → R2</span></div>
+             <div id="kpi-card-r1-to-r2" class="kpi-card-static border-t-teal-500"><span id="kpi-target-r1-to-r2" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">35%</span><div class="flex items-center justify-center"><span id="kpiR1toR2Rate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1toR2Count" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Eff → R2</span></div>
              <div id="kpi-card-r2-count" class="kpi-card-toggle kpi-card-static border-t-purple-500"><span id="kpiR2Count" class="text-3xl font-bold text-purple-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">R2 Planifiés</span></div>
              
              <!-- Ligne 2: Tunnel R2 & Cash -->
              <div id="kpi-card-r2-noshow" class="kpi-card-toggle kpi-card-static border-t-orange-500"><span id="kpi-target-r2-noshow" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">20%</span><div class="flex items-center justify-center"><span id="kpiR2NoShowRate" class="text-3xl font-bold text-orange-400 block">0%</span><span id="kpiR2NoShowCount" class="kpi-secondary-value !text-orange-400 block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider block mt-1">% No Show R2</span></div>
-             <div class="kpi-card-static border-t-teal-500"><span id="kpi-target-r1plan-to-closed" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">10%</span><div class="flex items-center justify-center"><span id="kpiR1PlanToClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1PlanToClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Plan → Closé</span></div>
-             <div class="kpi-card-static border-t-teal-500"><span id="kpi-target-r2-to-closed" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">55%</span><div class="flex items-center justify-center"><span id="kpiR2toClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR2toClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R2 Eff → Closé</span></div>
+             <div id="kpi-card-r1plan-to-closed" class="kpi-card-static border-t-teal-500"><span id="kpi-target-r1plan-to-closed" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">10%</span><div class="flex items-center justify-center"><span id="kpiR1PlanToClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR1PlanToClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R1 Plan → Closé</span></div>
+             <div id="kpi-card-r2-to-closed" class="kpi-card-static border-t-teal-500"><span id="kpi-target-r2-to-closed" class="absolute top-1.5 right-1.5 text-[10px] text-slate-500 font-mono">55%</span><div class="flex items-center justify-center"><span id="kpiR2toClosedRate" class="text-3xl font-bold text-teal-300 block">0%</span><span id="kpiR2toClosedCount" class="kpi-secondary-value block">(0)</span></div><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Conv. R2 Eff → Closé</span></div>
              <div id="kpi-card-closing" class="kpi-card-toggle kpi-card-static border-t-green-500"><span id="kpiClosingCount" class="text-3xl font-bold text-green-300 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Closings</span></div>
              <div id="kpi-card-cash" class="kpi-card-toggle kpi-card-static border-t-teal-500"><span id="kpiCashCollected" class="text-3xl font-bold text-teal-300 block mb-1">0€</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Cash Période</span></div>
              <div id="kpi-card-waiting" class="kpi-card-toggle kpi-card-static border-t-blue-400"><span id="kpiWaitingCount" class="text-3xl font-bold text-blue-400 block mb-1">0</span><span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Total "En Attente"</span></div>
@@ -186,7 +202,7 @@
              <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-semibold text-gray-300">Progression</h2>
                 <div class="flex space-x-2 text-sm text-gray-400">
-                    <span>Cliquez sur un KPI pour l'afficher/cacher. Cliquez sur le graphique pour ajouter un événement.</span>
+                    <span>Cliquez sur un KPI pour filtrer le tableau et le graphique.</span>
                 </div>
              </div>
              <div id="chartContainer" class="h-56 flex items-center justify-center text-gray-500">
@@ -227,6 +243,23 @@
                 <tbody id="detailsTableBody" class="bg-slate-800 divide-y divide-slate-700"></tbody>
             </table>
         </section>
+    </div>
+    
+    <!-- Modal Settings KPI -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-lg border border-slate-700 space-y-4">
+            <div class="flex justify-between items-center mb-4">
+                 <h2 class="text-xl font-semibold text-white">Paramètres d'Affichage KPI</h2>
+                 <button id="closeSettingsBtn" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <p class="text-sm text-gray-400">Cochez les cartes que vous souhaitez afficher sur le tableau de bord.</p>
+            <div id="kpiSettingsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <!-- Généré par JS -->
+            </div>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-600">
+                 <button id="saveSettingsBtn" class="bg-teal-600 hover:bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg transition-colors">Enregistrer</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Édition (Avec Checkboxes) -->
@@ -330,6 +363,22 @@
         let annotationsData = [];
         let mainChartInstance = null; 
         let currentViewMode = 'period';
+        
+        // Configuration des KPIs
+        const kpiDefinitions = [
+            { id: 'kpi-card-r1-planned', label: 'R1 Planifiés', defaultVisible: true },
+            { id: 'kpi-card-disqualified', label: 'Disqualifiés', defaultVisible: true },
+            { id: 'kpi-card-r1-noshow', label: '% No Show R1', defaultVisible: true },
+            { id: 'kpi-card-r1-completed', label: 'R1 Effectués', defaultVisible: true },
+            { id: 'kpi-card-r1-to-r2', label: 'Conv. R1 Eff → R2', defaultVisible: true, notToggleable: true }, // Not toggleable on chart
+            { id: 'kpi-card-r2-count', label: 'R2 Planifiés', defaultVisible: true },
+            { id: 'kpi-card-r2-noshow', label: '% No Show R2', defaultVisible: true },
+            { id: 'kpi-card-r1plan-to-closed', label: 'Conv. R1 Plan → Closé', defaultVisible: true, notToggleable: true },
+            { id: 'kpi-card-r2-to-closed', label: 'Conv. R2 Eff → Closé', defaultVisible: true, notToggleable: true },
+            { id: 'kpi-card-closing', label: 'Closings', defaultVisible: true },
+            { id: 'kpi-card-cash', label: 'Cash Période', defaultVisible: true },
+            { id: 'kpi-card-waiting', label: 'Total "En Attente"', defaultVisible: true }
+        ];
 
         // --- Fonctions Utilitaires ---
         function addMonths(date, months) { const d = new Date(date); d.setMonth(d.getMonth() + months); if (d.getDate() !== new Date(date).getDate()) { d.setDate(0); } return d; }
@@ -346,30 +395,53 @@
             if (!targetEl) return;
             let isGoalMet = false;
             switch (targetId) {
-                case 'kpi-target-r1-noshow':          // Green if <= 30%
-                    isGoalMet = kpiValue <= 30;
-                    break;
-                case 'kpi-target-r1-to-r2':           // Green if 30-35%
-                    isGoalMet = kpiValue >= 30 && kpiValue <= 35;
-                    break;
-                case 'kpi-target-r2-noshow':          // Green if <= 20%
-                    isGoalMet = kpiValue <= 20;
-                    break;
-                case 'kpi-target-r1plan-to-closed':   // Green if >= 10%
-                    isGoalMet = kpiValue >= 10;
-                    break;
-                case 'kpi-target-r2-to-closed':       // Green if >= 55%
-                    isGoalMet = kpiValue >= 55;
-                    break;
-                default:
-                    return; // Do nothing for unknown targets
+                case 'kpi-target-r1-noshow': isGoalMet = kpiValue <= 30; break;
+                case 'kpi-target-r1-to-r2': isGoalMet = kpiValue >= 30 && kpiValue <= 35; break;
+                case 'kpi-target-r2-noshow': isGoalMet = kpiValue <= 20; break;
+                case 'kpi-target-r1plan-to-closed': isGoalMet = kpiValue >= 10; break;
+                case 'kpi-target-r2-to-closed': isGoalMet = kpiValue >= 55; break;
+                default: return; 
             }
             targetEl.classList.remove('text-slate-500', 'text-green-400', 'text-red-400');
-            if (isGoalMet) {
-                targetEl.classList.add('text-green-400');
-            } else {
-                targetEl.classList.add('text-red-400');
+            if (isGoalMet) targetEl.classList.add('text-green-400'); else targetEl.classList.add('text-red-400');
+        }
+
+        function getActiveKpiFilters() {
+            const activeKpis = new Set();
+            document.querySelectorAll('.kpi-card-toggle.kpi-chart-active').forEach(card => {
+                activeKpis.add(card.id);
+            });
+            // If only "R1 Planned" is selected, we consider it as "No Filter" (Show All) for UX reasons
+            // unless we want strict filtering. 
+            // User request: "When I select a KPI... update list".
+            // If I select "R1 Planned", I expect to see R1 Planned (which is effectively everyone in the period).
+            return activeKpis;
+        }
+
+        function filterDataByKpis(data, activeKpis) {
+            if (activeKpis.size === 0) return data;
+            
+            // If only "R1 Planned" is selected, return all data for the period.
+            if (activeKpis.size === 1 && activeKpis.has('kpi-card-r1-planned')) {
+                return data;
             }
+
+            return data.filter(item => {
+                let matches = false;
+                
+                // Logic: If ANY of the active KPIs match the item, keep it. (Union)
+                if (activeKpis.has('kpi-card-r1-planned')) matches = true; // Should ideally not happen if handled above, but for completeness
+                if (activeKpis.has('kpi-card-disqualified') && item.status === 'Disqualified') matches = true;
+                if (activeKpis.has('kpi-card-r1-noshow') && item.status === 'No Show R1') matches = true;
+                if (activeKpis.has('kpi-card-r1-completed') && item.isR1Completed === true) matches = true;
+                if (activeKpis.has('kpi-card-r2-count') && (item.isR2Completed === true || item.status === 'No Show R2' || item.status === 'R2 Scheduled')) matches = true;
+                if (activeKpis.has('kpi-card-r2-noshow') && item.status === 'No Show R2') matches = true;
+                if (activeKpis.has('kpi-card-closing') && item.isClosed === true) matches = true;
+                if (activeKpis.has('kpi-card-cash') && item.isClosed === true) matches = true;
+                if (activeKpis.has('kpi-card-waiting') && item.status === 'Waiting') matches = true;
+
+                return matches;
+            });
         }
 
         function renderFilteredData() {
@@ -390,7 +462,9 @@
                 tableData = currentData.filter(item => item.status === 'Waiting');
                 tableData.sort((a, b) => (a.relaunchDate || '9999-12-31').localeCompare(b.relaunchDate || '9999-12-31'));
             } else {
-                tableData = dataForPeriod; 
+                // Filter Table based on Active KPIs
+                const activeKpis = getActiveKpiFilters();
+                tableData = filterDataByKpis(dataForPeriod, activeKpis);
             }
 
             updateKPIs(dataForPeriod, filterStartDate, filterEndDate); 
@@ -422,6 +496,7 @@
                  attachListeners();
                  setupKpiCardToggles(); 
                  setupFiltersAndLoad();
+                 loadKpiSettings(); // Load user preferences
                  await fetchAndDisplaySlidingKPIs(currentData); 
 
              } catch (error) { 
@@ -699,8 +774,6 @@
         }
 
         function setupKpiCardToggles() {
-            const kpiCards = [ 'kpi-card-r1-planned', 'kpi-card-r1-noshow', 'kpi-card-r1-completed', 'kpi-card-r2-count', 'kpi-card-r2-noshow', 'kpi-card-closing', 'kpi-card-cash', 'kpi-card-waiting', 'kpi-card-disqualified' ];
-            
             const kpiToggleLogic = (e) => {
                 const card = e.currentTarget;
                 const cardId = card.id;
@@ -731,29 +804,28 @@
                             waitingCard.classList.add('opacity-60');
                         }
                         dateShortcutsContainer.querySelectorAll('button').forEach(b => b.disabled = false);
-                        renderFilteredData();
                     }
                     
                     card.classList.toggle('kpi-chart-active');
                     card.classList.toggle('opacity-60');
                     
+                    // Trigger table filtering and chart update
+                    renderFilteredData();
                     updateChartVisibility();
                 }
             };
 
-            kpiCards.forEach(id => {
-                const cardEl = document.getElementById(id);
-                if (cardEl) {
-                    const defaultActive = ['kpi-card-r1-planned'];
-                    if (defaultActive.includes(id)) {
-                        cardEl.classList.add('kpi-chart-active');
-                        cardEl.classList.remove('opacity-60');
-                    } else {
-                        cardEl.classList.remove('kpi-chart-active');
-                        cardEl.classList.add('opacity-60');
-                    }
-                    cardEl.addEventListener('click', kpiToggleLogic);
-                } else { console.warn(`KPI Card Toggle non trouvé: #${id}`); }
+            document.querySelectorAll('.kpi-card-toggle').forEach(card => {
+                const id = card.id;
+                const defaultActive = ['kpi-card-r1-planned'];
+                if (defaultActive.includes(id)) {
+                    card.classList.add('kpi-chart-active');
+                    card.classList.remove('opacity-60');
+                } else {
+                    card.classList.remove('kpi-chart-active');
+                    card.classList.add('opacity-60');
+                }
+                card.addEventListener('click', kpiToggleLogic);
             });
         }
         
@@ -866,14 +938,41 @@
             safeSet('kpiWaitingCount', '0');
         }
         
+        // --- Navigation Mois & Filtres ---
+        function navigateMonth(step) {
+            const startDateInput = document.getElementById('startDate');
+            if (!startDateInput.value) return;
+
+            const currentStart = parseDateString(startDateInput.value);
+            if (!currentStart) return;
+
+            // Set to 1st of current month to avoid issues like Jan 31 -> Feb 28
+            currentStart.setDate(1);
+            
+            const targetDate = new Date(currentStart);
+            targetDate.setMonth(targetDate.getMonth() + step);
+
+            const year = targetDate.getFullYear();
+            const month = targetDate.getMonth();
+
+            const newStart = new Date(Date.UTC(year, month, 1));
+            const newEnd = new Date(Date.UTC(year, month + 1, 0));
+
+            document.getElementById('startDate').value = getISODate(newStart);
+            document.getElementById('endDate').value = getISODate(newEnd);
+
+            document.querySelectorAll('.date-shortcut').forEach(btn => btn.classList.remove('active'));
+            const monthBtn = document.querySelector('button[data-days="month"]');
+            if (monthBtn) monthBtn.classList.add('active');
+
+            renderFilteredData();
+        }
+
         function setupFiltersAndLoad() {
             const s = document.getElementById('startDate'), e = document.getElementById('endDate');
             const shortcuts = document.getElementById('dateShortcuts');
 
-            if (!s || !e || !shortcuts) {
-                console.error("Filter elements missing!");
-                return;
-            }
+            if (!s || !e || !shortcuts) return;
 
             function setDates(startDate, endDate) {
                 s.value = getISODate(startDate);
@@ -881,8 +980,9 @@
             }
 
             function handleShortcutClick(ev) {
-                if (ev.target.tagName !== 'BUTTON') return;
-                shortcuts.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                if (ev.target.tagName !== 'BUTTON' || ev.target.id === 'prevMonthBtn' || ev.target.id === 'nextMonthBtn') return;
+                
+                shortcuts.querySelectorAll('button:not(#prevMonthBtn):not(#nextMonthBtn)').forEach(btn => btn.classList.remove('active'));
                 ev.target.classList.add('active');
                 
                 if (currentViewMode === 'waiting') {
@@ -916,9 +1016,13 @@
                 renderFilteredData();
             }
             shortcuts.addEventListener('click', handleShortcutClick);
+            
+            // Month navigation listeners
+            document.getElementById('prevMonthBtn').addEventListener('click', () => navigateMonth(-1));
+            document.getElementById('nextMonthBtn').addEventListener('click', () => navigateMonth(1));
 
             function onDateChange() {
-                shortcuts.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                shortcuts.querySelectorAll('button:not(#prevMonthBtn):not(#nextMonthBtn)').forEach(btn => btn.classList.remove('active'));
                 if (s.value && e.value) {
                     renderFilteredData();
                 }
@@ -933,6 +1037,65 @@
         
         function displayError(message, isError = false) { let d=document.getElementById('dashboardError');if(!d){d=document.createElement('div');d.id='dashboardError';d.className='fixed bottom-4 right-4 p-4 bg-red-800 text-white rounded-lg shadow-xl z-[60]';document.body.appendChild(d);} if (isError) { d.classList.remove('bg-green-600'); d.classList.add('bg-red-800'); } else { d.classList.remove('bg-red-800'); d.classList.add('bg-green-600'); } d.textContent=message;setTimeout(()=>d.remove(),3000); }
         
+        // --- Settings Menu Logic ---
+        function loadKpiSettings() {
+            try {
+                const savedSettings = localStorage.getItem('gia_kpi_settings');
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    kpiDefinitions.forEach(kpi => {
+                        // Apply visibility
+                        const card = document.getElementById(kpi.id);
+                        if (card) {
+                            if (settings[kpi.id] === false) {
+                                card.classList.add('kpi-hidden-by-settings');
+                            } else {
+                                card.classList.remove('kpi-hidden-by-settings');
+                            }
+                        }
+                    });
+                }
+            } catch (e) { console.error("Error loading settings", e); }
+        }
+
+        function saveKpiSettings() {
+            const settings = {};
+            kpiDefinitions.forEach(kpi => {
+                const checkbox = document.getElementById(`setting-${kpi.id}`);
+                if (checkbox) {
+                    settings[kpi.id] = checkbox.checked;
+                    const card = document.getElementById(kpi.id);
+                    if (card) {
+                        if (!checkbox.checked) card.classList.add('kpi-hidden-by-settings');
+                        else card.classList.remove('kpi-hidden-by-settings');
+                    }
+                }
+            });
+            localStorage.setItem('gia_kpi_settings', JSON.stringify(settings));
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function openSettingsModal() {
+            const list = document.getElementById('kpiSettingsList');
+            list.innerHTML = '';
+            
+            kpiDefinitions.forEach(kpi => {
+                const card = document.getElementById(kpi.id);
+                const isVisible = card ? !card.classList.contains('kpi-hidden-by-settings') : kpi.defaultVisible;
+                
+                const item = document.createElement('div');
+                item.className = 'flex items-center p-2 bg-slate-700 rounded';
+                item.innerHTML = `
+                    <input type="checkbox" id="setting-${kpi.id}" ${isVisible ? 'checked' : ''} class="w-4 h-4 text-teal-600 rounded bg-slate-800 border-gray-600 focus:ring-teal-500 focus:ring-2">
+                    <label for="setting-${kpi.id}" class="ml-2 text-sm font-medium text-gray-300 flex-grow cursor-pointer select-none">${kpi.label}</label>
+                `;
+                list.appendChild(item);
+            });
+            
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        // --- Standard Modal Logic ---
         const modalStatusSelect = document.getElementById('modalStatus');
         const cbR1 = document.getElementById('modalIsR1Completed');
         const cbR2 = document.getElementById('modalIsR2Completed');
@@ -1472,6 +1635,12 @@
             document.getElementById('annotationCancelButton')?.addEventListener('click', closeAnnotationModal);
             document.getElementById('annotationSaveButton')?.addEventListener('click', saveAnnotation);
             document.getElementById('annotationModal')?.addEventListener('click', (e) => { if(e.target.id === 'annotationModal') closeAnnotationModal(); });
+            
+            // Settings Listeners
+            document.getElementById('openSettingsBtn')?.addEventListener('click', openSettingsModal);
+            document.getElementById('closeSettingsBtn')?.addEventListener('click', () => document.getElementById('settingsModal').classList.add('hidden'));
+            document.getElementById('saveSettingsBtn')?.addEventListener('click', saveKpiSettings);
+            document.getElementById('settingsModal')?.addEventListener('click', (e) => { if(e.target.id === 'settingsModal') document.getElementById('settingsModal').classList.add('hidden'); });
         }
         
         // --- Démarrage ---
