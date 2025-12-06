@@ -110,6 +110,11 @@
             .status-select {
                 @apply w-full bg-slate-700 border border-slate-600 rounded-md py-1 px-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-teal-400;
             }
+            
+            /* Jauge linéaire custom */
+            .linear-gauge-container { @apply w-full h-4 bg-slate-700 rounded-full relative overflow-hidden; }
+            .linear-gauge-bar { @apply h-full transition-all duration-500 ease-out; }
+            .linear-gauge-marker { @apply absolute top-0 bottom-0 w-0.5 bg-white z-10; }
         }
     </style>
 </head>
@@ -131,17 +136,104 @@
             </div>
         </header>
         
-        <!-- Référentiel J-180 -->
-        <section id="sliding-kpis-180" class="bg-slate-800/30 p-3 rounded-xl border border-slate-700/50">
-             <h3 class="text-sm font-semibold text-gray-400 mb-2 text-center">Référentiel (180 derniers jours)</h3>
-             <div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-gray-300">
-                 <span>R1 Planifiés: <strong id="kpi-180-planned" class="text-white">...</strong></span>
-                 <span>R1 Effectués: <strong id="kpi-180-completed" class="text-white">...</strong></span>
-                 <span>No Show R1: <strong id="kpi-180-noshow-r1" class="text-red-400">...</strong></span>
-                 <span>Closings: <strong id="kpi-180-closed" class="text-green-400">...</strong></span>
-                 <span>Conv. (Effec→Closé): <strong id="kpi-180-conv-rate" class="text-teal-300">...</strong></span>
-                 <span>Cash Période: <strong id="kpi-180-cash" class="text-teal-300">...</strong></span>
-             </div>
+        <!-- Top Stats Row: Référentiel + Jauge Fiabilité -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+            <!-- Référentiel J-180 -->
+            <section id="sliding-kpis-180" class="lg:col-span-9 bg-slate-800/30 p-4 rounded-xl border border-slate-700/50 flex flex-col justify-center">
+                 <h3 class="text-sm font-semibold text-gray-400 mb-3 text-center uppercase tracking-wide">Référentiel (180 derniers jours)</h3>
+                 <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-300">
+                     <span>R1 Planifiés: <strong id="kpi-180-planned" class="text-white text-base">...</strong></span>
+                     <span>R1 Effectués: <strong id="kpi-180-completed" class="text-white text-base">...</strong></span>
+                     <span>No Show R1: <strong id="kpi-180-noshow-r1" class="text-red-400 text-base">...</strong></span>
+                     <span>Closings: <strong id="kpi-180-closed" class="text-green-400 text-base">...</strong></span>
+                     <span>Conv. (Effec→Closé): <strong id="kpi-180-conv-rate" class="text-teal-300 text-base">...</strong></span>
+                     <span>Cash Période: <strong id="kpi-180-cash" class="text-teal-300 text-base">...</strong></span>
+                 </div>
+            </section>
+
+            <!-- Jauge Fiabilité Tunnel (Visuel Rapide) -->
+            <section class="lg:col-span-3 bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 flex flex-col items-center justify-center relative min-h-[140px]">
+                <h3 class="text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider text-center">Fiabilité Statistique</h3>
+                <div class="relative w-24 h-24">
+                    <canvas id="reliabilityChart"></canvas>
+                    <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                         <span id="reliabilityCount" class="text-xl font-bold text-white">0</span>
+                         <span class="text-[9px] text-gray-500">/ 30 R1</span>
+                    </div>
+                </div>
+                <p id="reliabilityLabel" class="text-[9px] text-gray-500 mt-1 text-center truncate w-full px-2" title="Depuis la dernière ligne rouge">Depuis MAJ: <span id="lastAnnotationDateDisplay" class="text-gray-300">-</span></p>
+            </section>
+        </div>
+
+        <!-- MOTEUR DE DÉCISION (NOUVEAU) -->
+        <section id="decisionEngine" class="bg-slate-900 border-2 border-slate-700 p-5 rounded-xl shadow-2xl mb-6 relative overflow-hidden">
+            <!-- Background Decoration -->
+            <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-2">
+                <svg class="w-6 h-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                <h2 class="text-xl font-extrabold text-white tracking-widest uppercase">Moteur de Décision</h2>
+                <span class="text-xs text-gray-500 font-mono ml-auto">ANALYSE DU <span id="decisionDate">...</span></span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Gauges Column -->
+                <div class="space-y-6">
+                    <!-- Rappel Fiabilité -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-slate-800 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg></div>
+                            <div>
+                                <p class="text-xs text-gray-400 uppercase font-bold">Jauge Fiabilité (Stock)</p>
+                                <p class="text-sm font-mono text-white"><span id="deReliabilityValue">0</span> / 30 R1 <span id="deReliabilityPercent" class="text-xs text-gray-500">(0%)</span></p>
+                            </div>
+                        </div>
+                        <span id="deReliabilityStatus" class="px-2 py-1 bg-slate-800 text-gray-400 text-xs font-bold rounded">EN ATTENTE</span>
+                    </div>
+
+                    <!-- Jauge Débit (Throughput) -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-slate-800 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                                <div>
+                                    <p class="text-xs text-gray-400 uppercase font-bold">Jauge Débit (Flux 14j)</p>
+                                    <p class="text-sm font-mono text-white"><span id="deThroughputValue">0.0</span> appels / semaine</p>
+                                </div>
+                            </div>
+                            <span id="deThroughputStatus" class="px-2 py-1 bg-red-900/50 text-red-400 text-xs font-bold rounded border border-red-900">CRITIQUE</span>
+                        </div>
+                        <!-- Linear Gauge Visual -->
+                        <div class="linear-gauge-container">
+                            <!-- Background Zones -->
+                            <div class="absolute inset-0 flex h-full w-full opacity-30">
+                                <div class="h-full w-[37.5%] bg-red-600"></div> <!-- 0 to 1.5 (Scale 0-4) -->
+                                <div class="h-full w-[37.5%] bg-orange-500"></div> <!-- 1.5 to 3.0 -->
+                                <div class="h-full w-[25%] bg-green-500"></div> <!-- 3.0 to 4.0+ -->
+                            </div>
+                            <!-- The Bar -->
+                            <div id="deThroughputBar" class="absolute top-0 bottom-0 left-0 bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)] transition-all duration-700 w-0 border-r-2 border-slate-900"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-gray-500 mt-1 font-mono">
+                            <span>0</span>
+                            <span>1.5</span>
+                            <span>3.0</span>
+                            <span>4+</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Directive Column -->
+                <div id="deDirectiveContainer" class="bg-slate-800 rounded-lg p-5 flex flex-col justify-center border-l-4 border-slate-600 transition-colors duration-300">
+                    <h3 class="text-xs text-gray-400 uppercase tracking-widest mb-2 font-bold">L'ORDRE DU JOUR :</h3>
+                    <p id="deMainMessage" class="text-xl md:text-2xl font-black text-white leading-tight mb-2">CHARGEMENT...</p>
+                    <p id="deSubtitle" class="text-sm font-medium text-gray-300 mb-4 italic">Analyse en cours...</p>
+                    <div class="bg-black/30 p-3 rounded border border-white/10">
+                        <p class="text-xs text-gray-400 uppercase font-bold mb-1">Action Requise :</p>
+                        <p id="deActionOrder" class="text-sm text-white font-medium">Veuillez patienter.</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Filtres (refonte) -->
@@ -362,6 +454,7 @@
         let currentData = [];
         let annotationsData = [];
         let mainChartInstance = null; 
+        let reliabilityChartInstance = null;
         let currentViewMode = 'period';
         
         // Configuration des KPIs
@@ -411,26 +504,19 @@
             document.querySelectorAll('.kpi-card-toggle.kpi-chart-active').forEach(card => {
                 activeKpis.add(card.id);
             });
-            // If only "R1 Planned" is selected, we consider it as "No Filter" (Show All) for UX reasons
-            // unless we want strict filtering. 
-            // User request: "When I select a KPI... update list".
-            // If I select "R1 Planned", I expect to see R1 Planned (which is effectively everyone in the period).
             return activeKpis;
         }
 
         function filterDataByKpis(data, activeKpis) {
             if (activeKpis.size === 0) return data;
             
-            // If only "R1 Planned" is selected, return all data for the period.
             if (activeKpis.size === 1 && activeKpis.has('kpi-card-r1-planned')) {
                 return data;
             }
 
             return data.filter(item => {
                 let matches = false;
-                
-                // Logic: If ANY of the active KPIs match the item, keep it. (Union)
-                if (activeKpis.has('kpi-card-r1-planned')) matches = true; // Should ideally not happen if handled above, but for completeness
+                if (activeKpis.has('kpi-card-r1-planned')) matches = true; 
                 if (activeKpis.has('kpi-card-disqualified') && item.status === 'Disqualified') matches = true;
                 if (activeKpis.has('kpi-card-r1-noshow') && item.status === 'No Show R1') matches = true;
                 if (activeKpis.has('kpi-card-r1-completed') && item.isR1Completed === true) matches = true;
@@ -462,7 +548,6 @@
                 tableData = currentData.filter(item => item.status === 'Waiting');
                 tableData.sort((a, b) => (a.relaunchDate || '9999-12-31').localeCompare(b.relaunchDate || '9999-12-31'));
             } else {
-                // Filter Table based on Active KPIs
                 const activeKpis = getActiveKpiFilters();
                 tableData = filterDataByKpis(dataForPeriod, activeKpis);
             }
@@ -496,8 +581,10 @@
                  attachListeners();
                  setupKpiCardToggles(); 
                  setupFiltersAndLoad();
-                 loadKpiSettings(); // Load user preferences
+                 loadKpiSettings(); 
                  await fetchAndDisplaySlidingKPIs(currentData); 
+                 renderReliabilityGauge(); 
+                 renderDecisionEngine(); // Lance l'analyse du moteur de décision
 
              } catch (error) { 
                  console.error("Erreur fetch Firestore:", error); 
@@ -505,6 +592,188 @@
                  if (tableBody) tableBody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-red-400">Erreur chargement.</td></tr>`; 
              }
          }
+
+        // --- Decision Engine Logic ---
+        function renderDecisionEngine() {
+            // 1. Définir le début du cycle : STRICTEMENT BASÉ SUR LA DERNIÈRE ANNOTATION
+            const sortedAnnotations = [...annotationsData].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const lastAnnotation = sortedAnnotations[0];
+            
+            let cycleStartDate;
+            let cycleLabel;
+
+            if (lastAnnotation && lastAnnotation.date) {
+                cycleStartDate = parseDateString(lastAnnotation.date);
+                const d = new Date(lastAnnotation.date);
+                cycleLabel = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+            } else {
+                // Fallback uniquement si aucune annotation n'est trouvée (Nouvel utilisateur)
+                // On garde le 25 Nov comme "Date Zéro" historique du business model
+                cycleStartDate = new Date(Date.UTC(2024, 10, 25)); 
+                cycleLabel = "25/11/24 (Défaut - Ajoutez une ligne rouge)";
+            }
+
+            safeSet('decisionDate', new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }));
+            safeSet('lastAnnotationDateDisplay', cycleLabel);
+            
+            // Mise à jour du titre pour refléter la source de données
+            const reliabilityLabel = document.getElementById('reliabilityLabel');
+            if(reliabilityLabel) reliabilityLabel.innerHTML = `Depuis Maj Tunnel: <span class="text-white font-bold">${cycleLabel}</span>`;
+
+
+            // 2. Calculer Stock Total (QCPA Total)
+            // On ne prend que les R1 effectués APRÈS ou LE JOUR de la dernière annotation
+            const r1Stock = currentData.filter(d => 
+                d.isR1Completed === true && 
+                parseDateString(d.prospectDate) >= cycleStartDate
+            ).length;
+
+            // 3. Calculer Flux Récent (QCPA 14j)
+            const today = new Date();
+            const fourteenDaysAgo = new Date(today);
+            fourteenDaysAgo.setDate(today.getDate() - 14);
+            // On remet les heures à 0 pour comparaison stricte de date
+            fourteenDaysAgo.setHours(0,0,0,0);
+
+            const r1Flow14d = currentData.filter(d => {
+                const pDate = parseDateString(d.prospectDate);
+                return d.isR1Completed === true && pDate >= fourteenDaysAgo;
+            }).length;
+
+            const weeklyAverage = r1Flow14d / 2;
+
+            // 4. Update DOM Elements (Chiffres)
+            safeSet('deReliabilityValue', r1Stock);
+            const reliabilityPercent = Math.min((r1Stock / 30) * 100, 100).toFixed(0);
+            safeSet('deReliabilityPercent', `(${reliabilityPercent}%)`);
+            
+            const relStatusEl = document.getElementById('deReliabilityStatus');
+            if(r1Stock >= 30) {
+                relStatusEl.textContent = "FIABLE";
+                relStatusEl.className = "px-2 py-1 bg-green-900/50 text-green-400 text-xs font-bold rounded border border-green-900";
+            } else {
+                relStatusEl.textContent = "NON FIABLE";
+                relStatusEl.className = "px-2 py-1 bg-slate-800 text-gray-400 text-xs font-bold rounded";
+            }
+
+            safeSet('deThroughputValue', weeklyAverage.toFixed(1));
+            
+            // 5. Update Gauge Bar
+            const barEl = document.getElementById('deThroughputBar');
+            // Scale: 0 to 4+. 
+            // 1.5 is 37.5% width. 3.0 is 75% width. 4.0 is 100% width.
+            const barPercentage = Math.min((weeklyAverage / 4) * 100, 100);
+            if(barEl) barEl.style.width = `${barPercentage}%`;
+
+            // 6. MATRICE DE DECISION (Le Cerveau)
+            const container = document.getElementById('deDirectiveContainer');
+            const mainMsg = document.getElementById('deMainMessage');
+            const subTitle = document.getElementById('deSubtitle');
+            const actionOrder = document.getElementById('deActionOrder');
+            const throughputStatus = document.getElementById('deThroughputStatus');
+
+            // Reset Styles
+            container.className = "rounded-lg p-5 flex flex-col justify-center border-l-4 transition-colors duration-300";
+
+            if (r1Stock >= 30) {
+                // CAS D : DATA VALIDÉE
+                container.classList.add('bg-green-900/20', 'border-green-500');
+                mainMsg.innerHTML = "🚀 DATA VALIDÉE :<br>PHASE DE SCALING ACTIVÉE.";
+                mainMsg.className = "text-xl md:text-2xl font-black text-green-400 leading-tight mb-2";
+                subTitle.textContent = "Vos statistiques sont désormais mathématiquement fiables.";
+                actionOrder.textContent = "Vérifiez le ROAS. Si positif, doublez progressivement le budget pub. Le système est solide.";
+                
+                throughputStatus.textContent = "OPTIMAL";
+                throughputStatus.className = "px-2 py-1 bg-green-900/50 text-green-400 text-xs font-bold rounded border border-green-900";
+            } 
+            else if (weeklyAverage < 1.5) {
+                // CAS A : ALERTE ROUGE
+                container.classList.add('bg-red-900/20', 'border-red-600');
+                mainMsg.innerHTML = "🛑 ALERTE ROUGE :<br>INTERVENTION REQUISE IMMÉDIATE.";
+                mainMsg.className = "text-xl md:text-2xl font-black text-red-500 leading-tight mb-2";
+                subTitle.textContent = "Le débit est critique. Risque financier avéré.";
+                actionOrder.textContent = "Augmenter le budget pub de 20% OU desserrer le filtre Calendly (enlever une friction) dès demain matin.";
+
+                throughputStatus.textContent = "CRITIQUE";
+                throughputStatus.className = "px-2 py-1 bg-red-900/50 text-red-400 text-xs font-bold rounded border border-red-900";
+            }
+            else if (weeklyAverage < 3.0) {
+                // CAS B : ALERTE ORANGE
+                container.classList.add('bg-orange-900/20', 'border-orange-500');
+                mainMsg.innerHTML = "⚠️ ALERTE ORANGE :<br>PATIENCE VIGILANTE.";
+                mainMsg.className = "text-xl md:text-2xl font-black text-orange-400 leading-tight mb-2";
+                subTitle.textContent = "Le système est lent mais fonctionnel. Ne pas sur-réagir.";
+                actionOrder.textContent = "INTERDICTION DE TOUCHER AU TUNNEL OU AUX PUBS. Action autorisée uniquement sur le mail marketing (relance base) pour tenter de passer en vert.";
+
+                throughputStatus.textContent = "SOUS-RÉGIME";
+                throughputStatus.className = "px-2 py-1 bg-orange-900/50 text-orange-400 text-xs font-bold rounded border border-orange-900";
+            }
+            else {
+                // CAS C : FEU VERT (Mais pas encore fiable)
+                container.classList.add('bg-emerald-900/20', 'border-emerald-500');
+                mainMsg.innerHTML = "🟢 FEU VERT :<br>DORMEZ TRANQUILLE.";
+                mainMsg.className = "text-xl md:text-2xl font-black text-emerald-400 leading-tight mb-2";
+                subTitle.textContent = "Tout fonctionne parfaitement. Le business est en bonne santé.";
+                actionOrder.textContent = "NE RIEN FAIRE. Laissez la jauge de fiabilité se remplir. Profitez de votre journée.";
+
+                throughputStatus.textContent = "CROISIÈRE";
+                throughputStatus.className = "px-2 py-1 bg-emerald-900/50 text-emerald-400 text-xs font-bold rounded border border-emerald-900";
+            }
+        }
+
+        // --- Reliability Gauge Logic (Old Circular Gauge - Simplified) ---
+        function renderReliabilityGauge() {
+            // Cette fonction ne sert plus qu'à afficher le petit widget en haut à droite
+            // Le calcul principal se fait dans renderDecisionEngine
+            // On veut juste que le petit widget affiche la MEME CHOSE que le gros moteur
+            const sortedAnnotations = [...annotationsData].sort((a, b) => new Date(b.date) - new Date(a.date));
+            const lastAnnotation = sortedAnnotations[0];
+            
+            let cycleStartDate = new Date(Date.UTC(2024, 10, 25)); 
+            if (lastAnnotation && lastAnnotation.date) {
+                cycleStartDate = parseDateString(lastAnnotation.date);
+            }
+            
+            const count = currentData.filter(d => 
+                d.isR1Completed === true && 
+                parseDateString(d.prospectDate) >= cycleStartDate
+            ).length;
+
+            safeSet('reliabilityCount', count);
+            
+            const ctx = document.getElementById('reliabilityChart');
+            if (!ctx) return;
+            
+            const target = 30;
+            const percentage = Math.min((count / target) * 100, 100);
+            const remaining = 100 - percentage;
+            
+            let color = '#2dd4bf'; // Default Teal
+            if (count >= target) color = '#22c55e'; // Green
+            else if (count < 10) color = '#f97316'; // Orange
+
+            if (reliabilityChartInstance) { reliabilityChartInstance.destroy(); }
+            
+            reliabilityChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['R1 Faits', 'Restant'],
+                    datasets: [{
+                        data: [percentage, remaining],
+                        backgroundColor: [color, 'rgba(51, 65, 85, 0.5)'], // slate-700
+                        borderWidth: 0,
+                        cutout: '85%', // Thickness
+                        circumference: 360,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    animation: { animateScale: true, animateRotate: true }
+                }
+            });
+        }
         
         async function fetchAndDisplaySlidingKPIs(data) {
             if (!data) { console.warn("J-180: Données non prêtes."); return; }
@@ -526,7 +795,6 @@
         }
         
         function updateKPIs(dataForPeriod, filterStart, filterEnd) {
-            // Étape 1: Compter les événements pour le COHORT (basé sur la date de R1) pour les taux de conversion
             const r1Planned = dataForPeriod.length;
             const r1NoShow = dataForPeriod.filter(p => p.status === 'No Show R1').length;
             const disqualifiedCount = dataForPeriod.filter(p => p.status === 'Disqualified').length;
@@ -535,14 +803,12 @@
             const r2NoShow = dataForPeriod.filter(p => p.status === 'No Show R2').length;
             const closedCountForCohort = dataForPeriod.filter(p => p.isClosed === true).length;
 
-            // Étape 1.5: Compter les closings pour la PÉRIODE (basé sur closingDate) pour le KPI principal
             const closedInPeriod = currentData.filter(p => {
                 const closingDate = parseDateString(p.closingDate);
                 return p.isClosed === true && closingDate && closingDate >= filterStart && closingDate <= filterEnd;
             });
             const closedCountForKPI = closedInPeriod.length;
 
-            // Étape 2: Calculer les taux de conversion (basé sur le COHORT)
             const noShowR1Rate = r1Planned > 0 ? (r1NoShow / r1Planned * 100) : 0;
             const noShowR2Rate = r2Planned > 0 ? (r2NoShow / r2Planned * 100) : 0;
             const r1ToR2Rate = r1Completed > 0 ? (r2Planned / r1Completed * 100) : 0;
@@ -550,15 +816,13 @@
             const r2ToClosedRate = r2Completed > 0 ? (closedCountForCohort / r2Completed * 100) : 0;
             const r1PlanToClosedRate = r1Planned > 0 ? (closedCountForCohort / r1Planned * 100) : 0;
 
-            // Étape 3: Calculer le cash (basé sur la PÉRIODE)
             let cashCollectedInPeriod = 0;
-            let cashFutureRecurring = 0;
             currentData.forEach(item => {
                 if (item.isClosed === true) {
                     const pT = item.paymentType || 'unique';
                     const tA = Number(item.amountCollected) || 0;
                     if (pT === 'unique') {
-                        const paymentDate = parseDateString(item.closingDate); // Utilise la date de closing
+                        const paymentDate = parseDateString(item.closingDate);
                         if (paymentDate && paymentDate >= filterStart && paymentDate <= filterEnd) {
                             cashCollectedInPeriod += tA;
                         }
@@ -571,8 +835,6 @@
                                 const pD = addMonths(fPD, i);
                                 if (pD >= filterStart && pD <= filterEnd) {
                                     cashCollectedInPeriod += iA;
-                                } else if (pD > filterEnd) {
-                                    cashFutureRecurring += iA;
                                 }
                             }
                         }
@@ -580,7 +842,6 @@
                 }
             });
 
-            // Étape 4: Mettre à jour l'interface utilisateur
             safeSet('kpiR1Planned', r1Planned);
             safeSet('kpiR1NoShowRate', `${noShowR1Rate.toFixed(1)}%`);
             safeSet('kpiR1NoShowCount', `(${r1NoShow})`);
@@ -589,13 +850,13 @@
             safeSet('kpiR2Count', r2Planned);
             safeSet('kpiR2NoShowRate', `${noShowR2Rate.toFixed(1)}%`);
             safeSet('kpiR2NoShowCount', `(${r2NoShow})`);
-            safeSet('kpiClosingCount', closedCountForKPI); // Utilise le compte de la période
+            safeSet('kpiClosingCount', closedCountForKPI);
             safeSet('kpiR1toR2Rate', `${r1ToR2Rate.toFixed(1)}%`);
             safeSet('kpiR1toR2Count', `(${r2Planned})`);
             safeSet('kpiR2toClosedRate', `${r2ToClosedRate.toFixed(1)}%`);
-            safeSet('kpiR2toClosedCount', `(${closedCountForCohort})`); // Utilise le compte du cohort
+            safeSet('kpiR2toClosedCount', `(${closedCountForCohort})`);
             safeSet('kpiR1PlanToClosedRate', `${r1PlanToClosedRate.toFixed(1)}%`);
-            safeSet('kpiR1PlanToClosedCount', `(${closedCountForCohort})`); // Utilise le compte du cohort
+            safeSet('kpiR1PlanToClosedCount', `(${closedCountForCohort})`);
             safeSet('kpiCashCollected', `${cashCollectedInPeriod.toLocaleString('fr-FR')}€`);
 
             updateTargetColor('kpi-target-r1-noshow', noShowR1Rate);
@@ -619,16 +880,15 @@
                     r1_planned: createMetric(),
                     r1_noshow: createMetric(),
                     disqualified: createMetric(),
-                    r1: createMetric(), // R1 Effectués
+                    r1: createMetric(),
                     r2_count: createMetric(),
                     r2_noshow: createMetric(),
                     closed: createMetric(),
-                    cash: { count: 0, names: [] } // Cash is special, count is amount
+                    cash: { count: 0, names: [] }
                 };
                 currentDate.setDate(currentDate.getDate() + 1);
             }
         
-            // Remplir les données du COHORT (R1, R2) basé sur la date de R1
             dataForChart.forEach(item => {
                 const itemR1DateStr = item.prospectDate;
                 const prospectName = item.prospectName || 'N/A';
@@ -659,7 +919,6 @@
                 }
             });
         
-            // Remplir les données de la PÉRIODE (Closings, Cash) basé sur la date de l'événement
             currentData.forEach(item => {
                 const prospectName = item.prospectName || 'N/A';
                 if (item.isClosed === true) {
@@ -674,7 +933,7 @@
         
                     const pT = item.paymentType || 'unique';
                     if (pT === 'unique') {
-                        const pD = closingDate; // Utilise la date de closing
+                        const pD = closingDate; 
                         const amt = Number(item.amountCollected) || 0;
                         if (pD && pD >= filterStart && pD <= filterEnd) {
                             const cashDateStr = getISODate(pD);
@@ -809,7 +1068,6 @@
                     card.classList.toggle('kpi-chart-active');
                     card.classList.toggle('opacity-60');
                     
-                    // Trigger table filtering and chart update
                     renderFilteredData();
                     updateChartVisibility();
                 }
@@ -946,7 +1204,6 @@
             const currentStart = parseDateString(startDateInput.value);
             if (!currentStart) return;
 
-            // Set to 1st of current month to avoid issues like Jan 31 -> Feb 28
             currentStart.setDate(1);
             
             const targetDate = new Date(currentStart);
@@ -1019,7 +1276,6 @@
             }
             shortcuts.addEventListener('click', handleShortcutClick);
             
-            // Month navigation listeners
             document.getElementById('prevMonthBtn').addEventListener('click', () => navigateMonth(-1));
             document.getElementById('nextMonthBtn').addEventListener('click', () => navigateMonth(1));
 
@@ -1044,7 +1300,6 @@
             if (sInput && sInput.value && mBtn) {
                 const d = parseDateString(sInput.value);
                 if (d) {
-                    // Force le 1er du mois pour éviter les décalages de timezone sur le nom du mois
                     const dateForLabel = new Date(d.getFullYear(), d.getMonth(), 1);
                     const label = dateForLabel.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
                     mBtn.textContent = label.charAt(0).toUpperCase() + label.slice(1);
@@ -1061,7 +1316,6 @@
                 if (savedSettings) {
                     const settings = JSON.parse(savedSettings);
                     kpiDefinitions.forEach(kpi => {
-                        // Apply visibility
                         const card = document.getElementById(kpi.id);
                         if (card) {
                             if (settings[kpi.id] === false) {
@@ -1120,14 +1374,12 @@
         
         function updateModalCheckboxesLogic() {
             if (!cbR1 || !cbR2 || !cbClosed) return;
-            // Un R2 ou un Closing implique un R1 effectué.
             if (cbClosed.checked || cbR2.checked) {
                 cbR1.checked = true;
                 cbR1.disabled = true;
             } else {
                 cbR1.disabled = false;
             }
-            // Un closing implique un R2 effectué.
             if(cbClosed.checked) {
                 cbR2.checked = true;
                 cbR2.disabled = true;
@@ -1238,7 +1490,6 @@
              if(cbClosed) cbClosed.checked = pD.isClosed || false;
              document.getElementById('modalClosingDate').value = pD.closingDate || '';
              
-             // Pre-check based on action from table
              if (options.preCheck === 'r2_prevu' && cbR2) cbR2.checked = true;
              if (options.preCheck === 'close' && cbClosed) cbClosed.checked = true;
 
@@ -1288,7 +1539,6 @@
              if(!dId || !nS || !mE || !sB) return;
              
              const isR1 = cbR1.checked; const isR2 = cbR2.checked; const isClosed = cbClosed.checked;
-             // Date de R1 n'est plus lue depuis le formulaire car non-modifiable
              const originalProspect = currentData.find(item => item.id === dId);
              if (!originalProspect || !originalProspect.prospectDate) { mE.textContent = "Erreur: Impossible de trouver la date R1 originale."; return; }
              
@@ -1354,12 +1604,14 @@
                     currentData[docIndex] = updatedProspect;
                 }
                 renderFilteredData(); 
+                 renderReliabilityGauge(); 
+                 renderDecisionEngine(); // Update Engine
              } catch(error){ console.error("Err update:",error); mE.textContent=error.message || "Erreur sauvegarde."; }
              finally { sB.disabled=false; sB.textContent='Enregistrer'; }
         }
         function openDeleteConfirmModal(docId, prospectName) { document.getElementById('deleteProspectName').textContent=prospectName;document.getElementById('deleteDocId').value=docId;document.getElementById('deleteError').textContent='';document.getElementById('deleteConfirmModal').classList.remove('hidden'); }
         function closeDeleteConfirmModal() { document.getElementById('deleteConfirmModal').classList.add('hidden'); }
-        async function confirmDeletion() { const dId=document.getElementById('deleteDocId').value;const dE=document.getElementById('deleteError');const cB=document.getElementById('deleteConfirmButton');if(!dId){dE.textContent="ID manquant.";return;} dE.textContent='';cB.disabled=true;cB.textContent='Suppression...';try{const cP=`artifacts/${appId}/public/data/r1_closings`;const dR=doc(db,cP,dId);await deleteDoc(dR);closeDeleteConfirmModal(); currentData = currentData.filter(item => item.id !== dId); renderFilteredData(); }catch(error){console.error(`Err suppression ${dId}:`,error);dE.textContent="Erreur suppression.";}finally{cB.disabled=false;cB.textContent='Supprimer';} }
+        async function confirmDeletion() { const dId=document.getElementById('deleteDocId').value;const dE=document.getElementById('deleteError');const cB=document.getElementById('deleteConfirmButton');if(!dId){dE.textContent="ID manquant.";return;} dE.textContent='';cB.disabled=true;cB.textContent='Suppression...';try{const cP=`artifacts/${appId}/public/data/r1_closings`;const dR=doc(db,cP,dId);await deleteDoc(dR);closeDeleteConfirmModal(); currentData = currentData.filter(item => item.id !== dId); renderFilteredData(); renderReliabilityGauge(); renderDecisionEngine(); }catch(error){console.error(`Err suppression ${dId}:`,error);dE.textContent="Erreur suppression.";}finally{cB.disabled=false;cB.textContent='Supprimer';} }
         function openStartR1ConfirmModal(docId, prospectName) { document.getElementById('startR1ProspectName').textContent = prospectName; document.getElementById('startR1DocId').value = docId; document.getElementById('startR1Error').textContent = ''; document.getElementById('startR1ConfirmModal').classList.remove('hidden'); }
         function closeStartR1ConfirmModal() { document.getElementById('startR1ConfirmModal').classList.add('hidden'); }
         async function handleNoShow() { const docId = document.getElementById('startR1DocId').value; const errorP = document.getElementById('startR1Error'); const noShowButton = document.getElementById('noShowButton'); if (!docId || !db) { errorP.textContent = 'Erreur ID/DB'; return; } errorP.textContent = ''; noShowButton.disabled = true; noShowButton.textContent = 'Enregistrement...'; try { const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const docRef = doc(db, collectionPath, docId); await updateDoc(docRef, { status: 'No Show R1', isR1Completed: false, isR2Completed: false, isClosed: false, lastUpdatedAt: Timestamp.now() }); closeStartR1ConfirmModal(); const docIndex = currentData.findIndex(item => item.id === docId); if (docIndex > -1) { currentData[docIndex].status = 'No Show R1'; currentData[docIndex].isR1Completed = false; currentData[docIndex].isR2Completed = false; currentData[docIndex].isClosed = false;} renderFilteredData(); } catch (error) { console.error(`Erreur No Show ${docId}:`, error); errorP.textContent = 'Erreur sauvegarde No Show.'; } finally { noShowButton.disabled = false; noShowButton.textContent = 'Absent (No Show)'; } }
@@ -1436,7 +1688,7 @@
                     }
                 }
                 displayError(`Statut pré-qualif mis à jour.`, false);
-                renderFilteredData(); // Re-render table to show the new state
+                renderFilteredData(); 
 
             } catch (error) {
                 console.error(`Erreur mise à jour pré-qualif ${docId}:`, error);
@@ -1451,7 +1703,7 @@
             const isChecked = checkbox.checked;
 
             checkbox.classList.add('checkbox-loading');
-            checkbox.disabled = true; // Empêche les double-clics pendant la sauvegarde
+            checkbox.disabled = true;
 
             try {
                 const prospectIndex = currentData.findIndex(p => p.id === docId);
@@ -1460,7 +1712,6 @@
                 const currentProspect = { ...currentData[prospectIndex] };
                 let updates = { lastUpdatedAt: Timestamp.now() };
 
-                // Déterminer le nouvel état en fonction de l'action et de la logique de cascade
                 let newIsR1 = currentProspect.isR1Completed || false;
                 let newIsR2 = currentProspect.isR2Completed || false;
                 let newIsClosed = currentProspect.isClosed || false;
@@ -1469,24 +1720,21 @@
                 if (action === 'r2_prevu') newIsR2 = isChecked;
                 if (action === 'close') newIsClosed = isChecked;
 
-                if (isChecked) { // Cascade vers le haut
+                if (isChecked) {
                     if (newIsClosed) newIsR2 = true;
                     if (newIsR2) newIsR1 = true;
-                } else { // Cascade vers le bas
+                } else {
                     if (!newIsR1) newIsR2 = false;
                     if (!newIsR2) newIsClosed = false;
                 }
 
-                // Assigner les mises à jour si l'état a changé
                 if (newIsR1 !== (currentProspect.isR1Completed || false)) updates.isR1Completed = newIsR1;
                 if (newIsR2 !== (currentProspect.isR2Completed || false)) updates.isR2Completed = newIsR2;
                 if (newIsClosed !== (currentProspect.isClosed || false)) updates.isClosed = newIsClosed;
                 
-                // Déterminer le nouveau statut
                 let newStatus = 'R1 Scheduled';
                 if (newIsClosed) {
                     newStatus = 'Closed';
-                    // Définir automatiquement la date de closing si elle n'est pas déjà définie
                     if (!currentProspect.closingDate) {
                         updates.closingDate = getISODate(new Date());
                     }
@@ -1496,32 +1744,27 @@
                     newStatus = 'R1 Completed';
                 }
                 
-                // Mettre à jour le statut uniquement s'il est différent et n'est pas un statut d'exception
                 const exceptionStatuses = ['Waiting', 'No Show R1', 'No Show R2', 'Disqualified', 'Lost'];
                 if (newStatus !== currentProspect.status && !exceptionStatuses.includes(currentProspect.status)) {
                     updates.status = newStatus;
                 }
 
-                // Vérifier s'il y a des mises à jour réelles à envoyer
-                if (Object.keys(updates).length > 1) { // plus que juste le timestamp
+                if (Object.keys(updates).length > 1) {
                     const docRef = doc(db, `artifacts/${appId}/public/data/r1_closings`, docId);
                     await updateDoc(docRef, updates);
 
-                    // Mettre à jour les données locales pour le re-rendu
                     currentData[prospectIndex] = { ...currentProspect, ...updates };
                     displayError("Statut mis à jour.", false);
                 }
 
-                // Toujours re-rendre pour refléter l'état visuel, même si aucune mise à jour DB n'était nécessaire
                 renderFilteredData();
+                renderReliabilityGauge(); 
+                renderDecisionEngine();
 
             } catch (error) {
                 console.error(`Erreur de mise à jour pour ${docId}:`, error);
                 displayError("Erreur de mise à jour.", true);
-                // Rétablir l'état visuel en cas d'erreur
                 checkbox.checked = !isChecked; 
-            } finally {
-                // La réactivation se fait par le re-rendu de la table, pas besoin de réactiver manuellement ici
             }
         }
 
@@ -1545,7 +1788,6 @@
                     if (newStatus === 'No Show R2') dataToUpdate.isR2Completed = false;
                     if (newStatus === 'Lost' || newStatus === 'Disqualified') dataToUpdate.isClosed = false;
                 } else {
-                    // Revert to a status based on checkboxes
                     if (prospect.isClosed) dataToUpdate.status = 'Closed';
                     else if (prospect.isR2Completed) dataToUpdate.status = 'R2 Scheduled';
                     else if (prospect.isR1Completed) dataToUpdate.status = 'R1 Completed';
@@ -1558,10 +1800,12 @@
                 
                 displayError("Statut mis à jour.", false);
                 renderFilteredData();
+                renderReliabilityGauge(); 
+                renderDecisionEngine();
             } catch (error) {
                 console.error(`Erreur mise à jour statut ${docId}:`, error);
                 displayError("Erreur de mise à jour.", true);
-                selectElement.value = originalStatus; // Revert on error
+                selectElement.value = originalStatus;
             }
         }
 
@@ -1593,6 +1837,8 @@
                 const newDocRef = await addDoc(collection(db, collectionPath), dataToSave);
                 annotationsData.push({ id: newDocRef.id, ...dataToSave });
                 renderFilteredData();
+                renderReliabilityGauge(); 
+                renderDecisionEngine(); // Recalculate based on new annotation
                 closeAnnotationModal();
             } catch (error) {
                 console.error("Error saving annotation:", error);
@@ -1610,6 +1856,8 @@
                 await deleteDoc(doc(db, collectionPath, docId));
                 annotationsData = annotationsData.filter(a => a.id !== docId);
                 renderFilteredData();
+                renderReliabilityGauge(); 
+                renderDecisionEngine(); // Recalculate
             } catch(error) {
                 console.error("Error deleting annotation:", error);
                 displayError("Erreur de suppression.", true);
@@ -1673,6 +1921,7 @@
                 displayError("Erreur de chargement initiale. Vérifiez la console.", true);
             }
         });
+
     </script>
 
 </body>
