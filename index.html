@@ -117,6 +117,7 @@
             .linear-gauge-marker { @apply absolute top-0 bottom-0 w-0.5 bg-white z-10; }
         }
     </style>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-gradient-to-b from-gray-900 to-slate-900 text-white min-h-screen p-4 md:p-6">
 
@@ -164,77 +165,6 @@
                 <p id="reliabilityLabel" class="text-[9px] text-gray-500 mt-1 text-center truncate w-full px-2" title="Depuis la dernière ligne rouge">Depuis MAJ: <span id="lastAnnotationDateDisplay" class="text-gray-300">-</span></p>
             </section>
         </div>
-
-        <!-- MOTEUR DE DÉCISION (NOUVEAU) -->
-        <section id="decisionEngine" class="bg-slate-900 border-2 border-slate-700 p-5 rounded-xl shadow-2xl mb-6 relative overflow-hidden">
-            <!-- Background Decoration -->
-            <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl pointer-events-none"></div>
-            
-            <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-2">
-                <svg class="w-6 h-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-                <h2 class="text-xl font-extrabold text-white tracking-widest uppercase">Moteur de Décision</h2>
-                <span class="text-xs text-gray-500 font-mono ml-auto">ANALYSE DU <span id="decisionDate">...</span></span>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Gauges Column -->
-                <div class="space-y-6">
-                    <!-- Rappel Fiabilité -->
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="p-2 bg-slate-800 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg></div>
-                            <div>
-                                <p class="text-xs text-gray-400 uppercase font-bold">Jauge Fiabilité (Stock)</p>
-                                <p class="text-sm font-mono text-white"><span id="deReliabilityValue">0</span> / 30 R1 <span id="deReliabilityPercent" class="text-xs text-gray-500">(0%)</span></p>
-                            </div>
-                        </div>
-                        <span id="deReliabilityStatus" class="px-2 py-1 bg-slate-800 text-gray-400 text-xs font-bold rounded">EN ATTENTE</span>
-                    </div>
-
-                    <!-- Jauge Débit (Throughput) -->
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-3">
-                                <div class="p-2 bg-slate-800 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
-                                <div>
-                                    <p class="text-xs text-gray-400 uppercase font-bold">Jauge Débit (Flux 14j)</p>
-                                    <p class="text-sm font-mono text-white"><span id="deThroughputValue">0.0</span> appels / semaine</p>
-                                </div>
-                            </div>
-                            <span id="deThroughputStatus" class="px-2 py-1 bg-red-900/50 text-red-400 text-xs font-bold rounded border border-red-900">CRITIQUE</span>
-                        </div>
-                        <!-- Linear Gauge Visual -->
-                        <div class="linear-gauge-container">
-                            <!-- Background Zones -->
-                            <div class="absolute inset-0 flex h-full w-full opacity-30">
-                                <div class="h-full w-[37.5%] bg-red-600"></div> <!-- 0 to 1.5 (Scale 0-4) -->
-                                <div class="h-full w-[37.5%] bg-orange-500"></div> <!-- 1.5 to 3.0 -->
-                                <div class="h-full w-[25%] bg-green-500"></div> <!-- 3.0 to 4.0+ -->
-                            </div>
-                            <!-- The Bar -->
-                            <div id="deThroughputBar" class="absolute top-0 bottom-0 left-0 bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)] transition-all duration-700 w-0 border-r-2 border-slate-900"></div>
-                        </div>
-                        <div class="flex justify-between text-[10px] text-gray-500 mt-1 font-mono">
-                            <span>0</span>
-                            <span>1.5</span>
-                            <span>3.0</span>
-                            <span>4+</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Directive Column -->
-                <div id="deDirectiveContainer" class="bg-slate-800 rounded-lg p-5 flex flex-col justify-center border-l-4 border-slate-600 transition-colors duration-300">
-                    <h3 class="text-xs text-gray-400 uppercase tracking-widest mb-2 font-bold">L'ORDRE DU JOUR :</h3>
-                    <p id="deMainMessage" class="text-xl md:text-2xl font-black text-white leading-tight mb-2">CHARGEMENT...</p>
-                    <p id="deSubtitle" class="text-sm font-medium text-gray-300 mb-4 italic">Analyse en cours...</p>
-                    <div class="bg-black/30 p-3 rounded border border-white/10">
-                        <p class="text-xs text-gray-400 uppercase font-bold mb-1">Action Requise :</p>
-                        <p id="deActionOrder" class="text-sm text-white font-medium">Veuillez patienter.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- Filtres (refonte) -->
         <section class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-4">
@@ -481,7 +411,7 @@
         function getHHMMTime(date) { return date.toTimeString().split(' ')[0].substring(0, 5); }
         function formatFirebaseTimestamp(timestamp) { if (!timestamp || typeof timestamp.toDate !== 'function') return 'N/A'; try { return timestamp.toDate().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return 'Date invalide'; } }
         function formatDateToDDMM(dateString) { if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) { return dateString || '-'; } const parts = dateString.split('-'); return `${parts[2]}/${parts[1]}`; }
-        async function initFirebase() { try { const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" }; appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; const app = initializeApp(fC); db = getFirestore(app); auth = getAuth(app); return new Promise((resolve) => { onAuthStateChanged(auth, async (user) => { if (user) { resolve(); } else { try { await signInAnonymously(auth); resolve(); } catch (e){ console.error("Err anon:", e); resolve(); }} }); }); } catch (error) { console.error("Erreur init Firebase:", error); displayError("Erreur connexion DB."); return Promise.reject(error); } }
+        async function initFirebase() { try { const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" }; appId = typeof __app_id !== 'undefined' ? __app_id : 'vyjumwsuyuodjohtgb6f3m'; const app = initializeApp(fC); db = getFirestore(app); auth = getAuth(app); return new Promise((resolve) => { onAuthStateChanged(auth, async (user) => { if (user) { resolve(); } else { try { await signInAnonymously(auth); resolve(); } catch (e){ console.error("Err anon:", e); resolve(); }} }); }); } catch (error) { console.error("Erreur init Firebase:", error); displayError("Erreur connexion DB."); return Promise.reject(error); } }
         const safeSet = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
         function updateTargetColor(targetId, kpiValue) {
             const targetEl = document.getElementById(targetId);
@@ -584,7 +514,6 @@
                  loadKpiSettings(); 
                  await fetchAndDisplaySlidingKPIs(currentData); 
                  renderReliabilityGauge(); 
-                 renderDecisionEngine(); // Lance l'analyse du moteur de décision
 
              } catch (error) { 
                  console.error("Erreur fetch Firestore:", error); 
@@ -593,146 +522,22 @@
              }
          }
 
-        // --- Decision Engine Logic ---
-        function renderDecisionEngine() {
-            // 1. Définir le début du cycle : STRICTEMENT BASÉ SUR LA DERNIÈRE ANNOTATION
+        // --- Reliability Gauge Logic (Old Circular Gauge - Simplified) ---
+        function renderReliabilityGauge() {
+            // Cette fonction affiche le petit widget en haut à droite
             const sortedAnnotations = [...annotationsData].sort((a, b) => new Date(b.date) - new Date(a.date));
             const lastAnnotation = sortedAnnotations[0];
             
-            let cycleStartDate;
-            let cycleLabel;
+            let cycleStartDate = new Date(Date.UTC(2024, 10, 25)); 
+            let cycleLabel = "25/11/24";
 
             if (lastAnnotation && lastAnnotation.date) {
                 cycleStartDate = parseDateString(lastAnnotation.date);
                 const d = new Date(lastAnnotation.date);
                 cycleLabel = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-            } else {
-                // Fallback uniquement si aucune annotation n'est trouvée (Nouvel utilisateur)
-                // On garde le 25 Nov comme "Date Zéro" historique du business model
-                cycleStartDate = new Date(Date.UTC(2024, 10, 25)); 
-                cycleLabel = "25/11/24 (Défaut - Ajoutez une ligne rouge)";
             }
-
-            safeSet('decisionDate', new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }));
+            
             safeSet('lastAnnotationDateDisplay', cycleLabel);
-            
-            // Mise à jour du titre pour refléter la source de données
-            const reliabilityLabel = document.getElementById('reliabilityLabel');
-            if(reliabilityLabel) reliabilityLabel.innerHTML = `Depuis Maj Tunnel: <span class="text-white font-bold">${cycleLabel}</span>`;
-
-
-            // 2. Calculer Stock Total (QCPA Total)
-            // On ne prend que les R1 effectués APRÈS ou LE JOUR de la dernière annotation
-            const r1Stock = currentData.filter(d => 
-                d.isR1Completed === true && 
-                parseDateString(d.prospectDate) >= cycleStartDate
-            ).length;
-
-            // 3. Calculer Flux Récent (QCPA 14j)
-            const today = new Date();
-            const fourteenDaysAgo = new Date(today);
-            fourteenDaysAgo.setDate(today.getDate() - 14);
-            // On remet les heures à 0 pour comparaison stricte de date
-            fourteenDaysAgo.setHours(0,0,0,0);
-
-            const r1Flow14d = currentData.filter(d => {
-                const pDate = parseDateString(d.prospectDate);
-                return d.isR1Completed === true && pDate >= fourteenDaysAgo;
-            }).length;
-
-            const weeklyAverage = r1Flow14d / 2;
-
-            // 4. Update DOM Elements (Chiffres)
-            safeSet('deReliabilityValue', r1Stock);
-            const reliabilityPercent = Math.min((r1Stock / 30) * 100, 100).toFixed(0);
-            safeSet('deReliabilityPercent', `(${reliabilityPercent}%)`);
-            
-            const relStatusEl = document.getElementById('deReliabilityStatus');
-            if(r1Stock >= 30) {
-                relStatusEl.textContent = "FIABLE";
-                relStatusEl.className = "px-2 py-1 bg-green-900/50 text-green-400 text-xs font-bold rounded border border-green-900";
-            } else {
-                relStatusEl.textContent = "NON FIABLE";
-                relStatusEl.className = "px-2 py-1 bg-slate-800 text-gray-400 text-xs font-bold rounded";
-            }
-
-            safeSet('deThroughputValue', weeklyAverage.toFixed(1));
-            
-            // 5. Update Gauge Bar
-            const barEl = document.getElementById('deThroughputBar');
-            // Scale: 0 to 4+. 
-            // 1.5 is 37.5% width. 3.0 is 75% width. 4.0 is 100% width.
-            const barPercentage = Math.min((weeklyAverage / 4) * 100, 100);
-            if(barEl) barEl.style.width = `${barPercentage}%`;
-
-            // 6. MATRICE DE DECISION (Le Cerveau)
-            const container = document.getElementById('deDirectiveContainer');
-            const mainMsg = document.getElementById('deMainMessage');
-            const subTitle = document.getElementById('deSubtitle');
-            const actionOrder = document.getElementById('deActionOrder');
-            const throughputStatus = document.getElementById('deThroughputStatus');
-
-            // Reset Styles
-            container.className = "rounded-lg p-5 flex flex-col justify-center border-l-4 transition-colors duration-300";
-
-            if (r1Stock >= 30) {
-                // CAS D : DATA VALIDÉE
-                container.classList.add('bg-green-900/20', 'border-green-500');
-                mainMsg.innerHTML = "🚀 DATA VALIDÉE :<br>PHASE DE SCALING ACTIVÉE.";
-                mainMsg.className = "text-xl md:text-2xl font-black text-green-400 leading-tight mb-2";
-                subTitle.textContent = "Vos statistiques sont désormais mathématiquement fiables.";
-                actionOrder.textContent = "Vérifiez le ROAS. Si positif, doublez progressivement le budget pub. Le système est solide.";
-                
-                throughputStatus.textContent = "OPTIMAL";
-                throughputStatus.className = "px-2 py-1 bg-green-900/50 text-green-400 text-xs font-bold rounded border border-green-900";
-            } 
-            else if (weeklyAverage < 1.5) {
-                // CAS A : ALERTE ROUGE
-                container.classList.add('bg-red-900/20', 'border-red-600');
-                mainMsg.innerHTML = "🛑 ALERTE ROUGE :<br>INTERVENTION REQUISE IMMÉDIATE.";
-                mainMsg.className = "text-xl md:text-2xl font-black text-red-500 leading-tight mb-2";
-                subTitle.textContent = "Le débit est critique. Risque financier avéré.";
-                actionOrder.textContent = "Augmenter le budget pub de 20% OU desserrer le filtre Calendly (enlever une friction) dès demain matin.";
-
-                throughputStatus.textContent = "CRITIQUE";
-                throughputStatus.className = "px-2 py-1 bg-red-900/50 text-red-400 text-xs font-bold rounded border border-red-900";
-            }
-            else if (weeklyAverage < 3.0) {
-                // CAS B : ALERTE ORANGE
-                container.classList.add('bg-orange-900/20', 'border-orange-500');
-                mainMsg.innerHTML = "⚠️ ALERTE ORANGE :<br>PATIENCE VIGILANTE.";
-                mainMsg.className = "text-xl md:text-2xl font-black text-orange-400 leading-tight mb-2";
-                subTitle.textContent = "Le système est lent mais fonctionnel. Ne pas sur-réagir.";
-                actionOrder.textContent = "INTERDICTION DE TOUCHER AU TUNNEL OU AUX PUBS. Action autorisée uniquement sur le mail marketing (relance base) pour tenter de passer en vert.";
-
-                throughputStatus.textContent = "SOUS-RÉGIME";
-                throughputStatus.className = "px-2 py-1 bg-orange-900/50 text-orange-400 text-xs font-bold rounded border border-orange-900";
-            }
-            else {
-                // CAS C : FEU VERT (Mais pas encore fiable)
-                container.classList.add('bg-emerald-900/20', 'border-emerald-500');
-                mainMsg.innerHTML = "🟢 FEU VERT :<br>DORMEZ TRANQUILLE.";
-                mainMsg.className = "text-xl md:text-2xl font-black text-emerald-400 leading-tight mb-2";
-                subTitle.textContent = "Tout fonctionne parfaitement. Le business est en bonne santé.";
-                actionOrder.textContent = "NE RIEN FAIRE. Laissez la jauge de fiabilité se remplir. Profitez de votre journée.";
-
-                throughputStatus.textContent = "CROISIÈRE";
-                throughputStatus.className = "px-2 py-1 bg-emerald-900/50 text-emerald-400 text-xs font-bold rounded border border-emerald-900";
-            }
-        }
-
-        // --- Reliability Gauge Logic (Old Circular Gauge - Simplified) ---
-        function renderReliabilityGauge() {
-            // Cette fonction ne sert plus qu'à afficher le petit widget en haut à droite
-            // Le calcul principal se fait dans renderDecisionEngine
-            // On veut juste que le petit widget affiche la MEME CHOSE que le gros moteur
-            const sortedAnnotations = [...annotationsData].sort((a, b) => new Date(b.date) - new Date(a.date));
-            const lastAnnotation = sortedAnnotations[0];
-            
-            let cycleStartDate = new Date(Date.UTC(2024, 10, 25)); 
-            if (lastAnnotation && lastAnnotation.date) {
-                cycleStartDate = parseDateString(lastAnnotation.date);
-            }
             
             const count = currentData.filter(d => 
                 d.isR1Completed === true && 
@@ -1605,13 +1410,13 @@
                 }
                 renderFilteredData(); 
                  renderReliabilityGauge(); 
-                 renderDecisionEngine(); // Update Engine
+                 // renderDecisionEngine(); // Update Engine
              } catch(error){ console.error("Err update:",error); mE.textContent=error.message || "Erreur sauvegarde."; }
              finally { sB.disabled=false; sB.textContent='Enregistrer'; }
         }
         function openDeleteConfirmModal(docId, prospectName) { document.getElementById('deleteProspectName').textContent=prospectName;document.getElementById('deleteDocId').value=docId;document.getElementById('deleteError').textContent='';document.getElementById('deleteConfirmModal').classList.remove('hidden'); }
         function closeDeleteConfirmModal() { document.getElementById('deleteConfirmModal').classList.add('hidden'); }
-        async function confirmDeletion() { const dId=document.getElementById('deleteDocId').value;const dE=document.getElementById('deleteError');const cB=document.getElementById('deleteConfirmButton');if(!dId){dE.textContent="ID manquant.";return;} dE.textContent='';cB.disabled=true;cB.textContent='Suppression...';try{const cP=`artifacts/${appId}/public/data/r1_closings`;const dR=doc(db,cP,dId);await deleteDoc(dR);closeDeleteConfirmModal(); currentData = currentData.filter(item => item.id !== dId); renderFilteredData(); renderReliabilityGauge(); renderDecisionEngine(); }catch(error){console.error(`Err suppression ${dId}:`,error);dE.textContent="Erreur suppression.";}finally{cB.disabled=false;cB.textContent='Supprimer';} }
+        async function confirmDeletion() { const dId=document.getElementById('deleteDocId').value;const dE=document.getElementById('deleteError');const cB=document.getElementById('deleteConfirmButton');if(!dId){dE.textContent="ID manquant.";return;} dE.textContent='';cB.disabled=true;cB.textContent='Suppression...';try{const cP=`artifacts/${appId}/public/data/r1_closings`;const dR=doc(db,cP,dId);await deleteDoc(dR);closeDeleteConfirmModal(); currentData = currentData.filter(item => item.id !== dId); renderFilteredData(); renderReliabilityGauge(); }catch(error){console.error(`Err suppression ${dId}:`,error);dE.textContent="Erreur suppression.";}finally{cB.disabled=false;cB.textContent='Supprimer';} }
         function openStartR1ConfirmModal(docId, prospectName) { document.getElementById('startR1ProspectName').textContent = prospectName; document.getElementById('startR1DocId').value = docId; document.getElementById('startR1Error').textContent = ''; document.getElementById('startR1ConfirmModal').classList.remove('hidden'); }
         function closeStartR1ConfirmModal() { document.getElementById('startR1ConfirmModal').classList.add('hidden'); }
         async function handleNoShow() { const docId = document.getElementById('startR1DocId').value; const errorP = document.getElementById('startR1Error'); const noShowButton = document.getElementById('noShowButton'); if (!docId || !db) { errorP.textContent = 'Erreur ID/DB'; return; } errorP.textContent = ''; noShowButton.disabled = true; noShowButton.textContent = 'Enregistrement...'; try { const collectionPath = `artifacts/${appId}/public/data/r1_closings`; const docRef = doc(db, collectionPath, docId); await updateDoc(docRef, { status: 'No Show R1', isR1Completed: false, isR2Completed: false, isClosed: false, lastUpdatedAt: Timestamp.now() }); closeStartR1ConfirmModal(); const docIndex = currentData.findIndex(item => item.id === docId); if (docIndex > -1) { currentData[docIndex].status = 'No Show R1'; currentData[docIndex].isR1Completed = false; currentData[docIndex].isR2Completed = false; currentData[docIndex].isClosed = false;} renderFilteredData(); } catch (error) { console.error(`Erreur No Show ${docId}:`, error); errorP.textContent = 'Erreur sauvegarde No Show.'; } finally { noShowButton.disabled = false; noShowButton.textContent = 'Absent (No Show)'; } }
@@ -1759,8 +1564,7 @@
 
                 renderFilteredData();
                 renderReliabilityGauge(); 
-                renderDecisionEngine();
-
+                // renderDecisionEngine();
             } catch (error) {
                 console.error(`Erreur de mise à jour pour ${docId}:`, error);
                 displayError("Erreur de mise à jour.", true);
@@ -1801,7 +1605,7 @@
                 displayError("Statut mis à jour.", false);
                 renderFilteredData();
                 renderReliabilityGauge(); 
-                renderDecisionEngine();
+                // renderDecisionEngine();
             } catch (error) {
                 console.error(`Erreur mise à jour statut ${docId}:`, error);
                 displayError("Erreur de mise à jour.", true);
@@ -1838,7 +1642,7 @@
                 annotationsData.push({ id: newDocRef.id, ...dataToSave });
                 renderFilteredData();
                 renderReliabilityGauge(); 
-                renderDecisionEngine(); // Recalculate based on new annotation
+                // renderDecisionEngine(); // Recalculate based on new annotation
                 closeAnnotationModal();
             } catch (error) {
                 console.error("Error saving annotation:", error);
@@ -1857,7 +1661,7 @@
                 annotationsData = annotationsData.filter(a => a.id !== docId);
                 renderFilteredData();
                 renderReliabilityGauge(); 
-                renderDecisionEngine(); // Recalculate
+                // renderDecisionEngine(); // Recalculate
             } catch(error) {
                 console.error("Error deleting annotation:", error);
                 displayError("Erreur de suppression.", true);
@@ -1924,5 +1728,6 @@
 
     </script>
 
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
