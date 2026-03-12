@@ -334,7 +334,13 @@
         async function initFirebase() {
             try {
                 const fC = { apiKey: "AIzaSyCpRtHQd8oybG-uZKBRz-a2uKQCHrXMapY", authDomain: "closing-gia.firebaseapp.com", projectId: "closing-gia", storageBucket: "closing-gia.firebasestorage.app", messagingSenderId: "260776101981", appId: "1:260776101981:web:30d795f1d04a44d19f65b4" };
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                if (typeof __app_id !== 'undefined') {
+                    appId = __app_id;
+                } else {
+                    const host = window.location.hostname;
+                    const match = host.match(/^ais-(?:dev|pre)-([a-z0-9]+)-/);
+                    appId = (match && match[1]) ? match[1] : 'vyjumwsuyuodjohtgb6f3m';
+                }
                 const app = initializeApp(fC);
                 db = getFirestore(app);
                 auth = getAuth(app);
